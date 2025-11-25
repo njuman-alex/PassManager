@@ -1,34 +1,32 @@
 package com.c0dex.passmanager
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material.icons.Icons
-import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun MasterPasswordScreen(
-    onBackClick: () -> Unit,  // <-- Добавим параметр
-    onMasterPasswordSet: () -> Unit
+    onBackClick: () -> Unit,
+    onMasterPasswordSet: () -> Unit,
+    isMasterPasswordSet: Boolean
+) {
+    SetMasterPasswordScreen(
+        onBackClick = onBackClick,
+        onMasterPasswordSet = onMasterPasswordSet,
+        isMasterPasswordSet = isMasterPasswordSet
+    )
+}
+
+@Composable
+fun SetMasterPasswordScreen(
+    onBackClick: () -> Unit,
+    onMasterPasswordSet: () -> Unit,
+    isMasterPasswordSet: Boolean
 ) {
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
@@ -39,7 +37,7 @@ fun MasterPasswordScreen(
             TopAppBar(
                 title = { Text(text = "Мастер-пароль") },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {  // <-- Вызываем обратно
+                    IconButton(onClick = onBackClick) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Назад"
@@ -56,7 +54,7 @@ fun MasterPasswordScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)  // <-- Учитываем высоту TopAppBar
+                .padding(innerPadding)
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -80,17 +78,28 @@ fun MasterPasswordScreen(
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
+            // Кнопка "Установить"
             Button(
                 onClick = {
                     if (password == confirmPassword && password.length >= 6) {
-                        // TODO: сохранить хэш пароля (не сам пароль!)
                         onMasterPasswordSet()
-                        onBackClick() // Возвращаемся назад
+                        onBackClick()
                     }
                 },
-                enabled = password == confirmPassword && password.length >= 6
+                enabled = !isMasterPasswordSet && password == confirmPassword && password.length >= 6, // <-- Неактивна, если установлен
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Установить")
+            }
+
+            // Показываем текст, если мастер-пароль уже установлен
+            if (isMasterPasswordSet) {
+                Text(
+                    text = "Мастер-пароль установлен",
+                    color = MaterialTheme.colorScheme.primary, // Синий цвет (или другой)
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
             }
         }
     }

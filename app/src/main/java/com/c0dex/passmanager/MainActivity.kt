@@ -107,11 +107,15 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                         composable("master_password") {
+                            val context = LocalContext.current
+                            val isSet = isMasterPasswordSet(context)
+
                             MasterPasswordScreen(
                                 onBackClick = { navController.popBackStack() },
                                 onMasterPasswordSet = {
-                                    setMasterPasswordSet(this@MainActivity, true) // Вызов метода MainActivity
-                                }
+                                    setMasterPasswordSet(this@MainActivity, true)
+                                },
+                                isMasterPasswordSet = isSet
                             )
                         }
                         composable ( "settings_screen" ) {
