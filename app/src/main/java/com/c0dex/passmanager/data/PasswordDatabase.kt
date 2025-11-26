@@ -23,8 +23,7 @@ abstract class PasswordDatabase : RoomDatabase() {
                     context.applicationContext,
                     PasswordDatabase::class.java,
                     "password_database"
-                )
-                    .build()
+                ).build()
                 INSTANCE = instance
                 instance
             }

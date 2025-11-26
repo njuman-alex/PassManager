@@ -8,5 +8,5 @@ data class PasswordItem(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val description: String,
-    val encryptedPassword: String // Зашифрованный пароль
+    val encryptedPassword: String
 )
