@@ -1,10 +1,6 @@
 package com.c0dex.passmanager
 
-import android.content.Context
-import android.graphics.Color
-import android.os.Build
 import android.os.Bundle
-import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
@@ -49,7 +45,7 @@ class MasterPasswordActivity : AppCompatActivity() {
     }
 
     private fun checkMasterPasswordStatus() {
-        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         val hasMasterPassword = prefs.contains(MASTER_PASSWORD_KEY)
 
         if (hasMasterPassword) {
@@ -80,7 +76,7 @@ class MasterPasswordActivity : AppCompatActivity() {
     }
 
     private fun setMasterPassword(password: String) {
-        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         prefs.edit().putString(MASTER_PASSWORD_KEY, password.hashCode().toString()).apply()
     }
 

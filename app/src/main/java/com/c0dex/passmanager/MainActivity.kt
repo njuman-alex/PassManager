@@ -1,6 +1,5 @@
 package com.c0dex.passmanager
 
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
@@ -10,7 +9,6 @@ import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
-import androidx.core.content.ContextCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import com.google.android.material.navigation.NavigationView
 
@@ -110,7 +108,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun checkMasterPasswordStatus() {
-        val prefs = getSharedPreferences("password_prefs", Context.MODE_PRIVATE)
+        val prefs = getSharedPreferences("password_prefs", MODE_PRIVATE)
         val hasMasterPassword = prefs.contains("master_password_hash")
 
         if (!hasMasterPassword) {
@@ -150,7 +148,7 @@ class MainActivity : AppCompatActivity() {
         }
         if (useDigitsAndSpecial) {
             chars += "23456789"
-            chars += "!@#\$%^&*()_+-=[]{}|;:,.<>?"
+            chars += "!@#$%^&*()_+-=[]{}|;:,.<>?"
         }
 
         if (chars.isEmpty()) return ""
