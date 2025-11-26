@@ -22,6 +22,21 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".MasterPasswordActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".SavePasswordActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".PasswordListActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".SettingsActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

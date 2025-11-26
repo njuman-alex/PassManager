@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    //id("org.jetbrains.kotlin.kapt")
 }
 
 android {
@@ -50,6 +51,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.appcompat)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -58,4 +60,9 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     implementation("androidx.navigation:navigation-compose:2.9.6")
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    //implementation(libs.sqlcipher)
+    //implementation(libs.androidx.sqlite.ktx)
+    implementation("com.google.android.material:material:1.13.0")
 }
