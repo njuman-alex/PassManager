@@ -8,6 +8,8 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
+import java.security.SecureRandom
+import android.util.Base64
 
 class MasterPasswordActivity : AppCompatActivity() {
     private lateinit var passwordEditText: EditText
@@ -18,6 +20,9 @@ class MasterPasswordActivity : AppCompatActivity() {
 
     private val PREFS_NAME = "password_prefs"
     private val MASTER_PASSWORD_KEY = "master_password_hash"
+    private val MASTER_PASSWORD_HASH_KEY = "master_password_hash"
+    private val MASTER_PASSWORD_SALT_KEY = "master_password_salt"
+    private val MASTER_PASSWORD_KEY_KEY = "master_password_key"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -76,8 +81,18 @@ class MasterPasswordActivity : AppCompatActivity() {
     }
 
     private fun setMasterPassword(password: String) {
+        val salt = ByteArray(16)
+        SecureRandom().nextBytes(salt)
+
+        // Создаём ключ из пароля
+        val key = EncryptionHelper.generateKey(password, salt)
+
         val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-        prefs.edit().putString(MASTER_PASSWORD_KEY, password.hashCode().toString()).apply()
+        prefs.edit()
+            .putString(MASTER_PASSWORD_HASH_KEY, password.hashCode().toString())
+            .putString(MASTER_PASSWORD_SALT_KEY, Base64.encodeToString(salt, Base64.DEFAULT))
+            .putString(MASTER_PASSWORD_KEY_KEY, Base64.encodeToString(key.encoded, Base64.DEFAULT)) // <-- Сохраняем ключ
+            .apply()
     }
 
     override fun onSupportNavigateUp(): Boolean {

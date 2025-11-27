@@ -80,7 +80,7 @@ class MainActivity : AppCompatActivity() {
         navigationView.setNavigationItemSelectedListener { menuItem ->
             when (menuItem.itemId) {
                 R.id.nav_password_list -> {
-                    //startActivity(Intent(this, PasswordListActivity::class.java))
+                    startActivity(Intent(this, PasswordListActivity::class.java))
                 }
                 R.id.nav_master_password -> {
                     // Используем launcher

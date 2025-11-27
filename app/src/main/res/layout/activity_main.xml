@@ -74,13 +74,22 @@
                     android:text="Использовать цифры и спецсимволы"
                     android:layout_marginBottom="16dp" />
 
+                <TextView
+                    android:id="@+id/passwordLengthHint"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Длина пароля"
+                    android:textColor="@android:color/holo_blue_dark"
+                    android:gravity=""
+                    android:layout_marginTop="8dp" />
+
                 <EditText
                     android:id="@+id/passwordLengthEditText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:hint="Длина пароля"
                     android:inputType="number"
-                    android:text="12"
+                    android:text="8"
                     android:layout_marginBottom="16dp" />
 
                 <Button
