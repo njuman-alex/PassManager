@@ -86,7 +86,8 @@ class ShowPasswordActivity : AppCompatActivity() {
                     // Успешно расшифровано
                     descriptionText.text = currentDescription
                     passwordText.text = decryptedPassword
-                    passwordText.visibility = android.view.View.VISIBLE
+                    //passwordText.visibility = android.view.View.VISIBLE
+                    passwordText.text = decryptedPassword
                     editDescriptionButton.isEnabled = true
                     deletePasswordButton.isEnabled = true
                     descriptionText.isEnabled = true
@@ -118,8 +119,20 @@ class ShowPasswordActivity : AppCompatActivity() {
                 Toast.makeText(this, "Введите описание", Toast.LENGTH_SHORT).show()
             }
         }
-
-        // ... остальные кнопки
+        deletePasswordButton.setOnClickListener {
+            lifecycleScope.launch {
+                try {
+                    val db = PasswordDatabase.getDatabase(this@ShowPasswordActivity)
+                    db.passwordDao().deletePassword(currentPasswordId)
+                    Toast.makeText(this@ShowPasswordActivity, "Пароль удалён!", Toast.LENGTH_SHORT).show()
+                    setResult(RESULT_OK) // <-- Уведомляем, что были изменения
+                    finish() // <-- Закрываем активити
+                } catch (e: Exception) {
+                    Toast.makeText(this@ShowPasswordActivity, "Ошибка удаления", Toast.LENGTH_SHORT).show()
+                    e.printStackTrace()
+                }
+            }
+        }
     }
 
     private fun loadPassword() {
@@ -133,7 +146,8 @@ class ShowPasswordActivity : AppCompatActivity() {
                     currentDescription = passwordItem.description
                     // Показываем только описание, пока не расшифровали
                     descriptionText.text = currentDescription
-                    passwordText.visibility = android.view.View.GONE // <-- Скрыто до расшифровки
+                    //passwordText.visibility = android.view.View.GONE // <-- Скрыто до расшифровки
+                    passwordText.text = "Расшифруйте пароль"
                 } else {
                     Toast.makeText(this@ShowPasswordActivity, "Пароль не найден", Toast.LENGTH_SHORT).show()
                     finish()
@@ -147,6 +161,7 @@ class ShowPasswordActivity : AppCompatActivity() {
     }
 
     override fun onSupportNavigateUp(): Boolean {
+        setResult(RESULT_OK)
         onBackPressed()
         return true
     }

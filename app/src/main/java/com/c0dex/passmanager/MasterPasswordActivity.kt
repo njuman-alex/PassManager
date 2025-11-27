@@ -10,11 +10,13 @@ import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
 import java.security.SecureRandom
 import android.util.Base64
+import androidx.appcompat.app.AlertDialog
 
 class MasterPasswordActivity : AppCompatActivity() {
     private lateinit var passwordEditText: EditText
     private lateinit var confirmPasswordEditText: EditText
     private lateinit var setButton: Button
+    private lateinit var resetButton: Button
     private lateinit var statusText: TextView
     private lateinit var toolbar: Toolbar
 
@@ -38,6 +40,7 @@ class MasterPasswordActivity : AppCompatActivity() {
         passwordEditText = findViewById(R.id.passwordEditText)
         confirmPasswordEditText = findViewById(R.id.confirmPasswordEditText)
         setButton = findViewById(R.id.setButton)
+        resetButton = findViewById(R.id.resetButton)
         statusText = findViewById(R.id.statusText)
         toolbar = findViewById(R.id.toolbar)
     }
@@ -59,8 +62,12 @@ class MasterPasswordActivity : AppCompatActivity() {
             setButton.isEnabled = false
             statusText.text = "Мастер-пароль установлен"
             statusText.setTextColor(ContextCompat.getColor(this, android.R.color.holo_green_dark))
+            resetButton.isEnabled = true
+
         } else {
-            statusText.text = ""
+            statusText.text = "Мастер-пароль еще не установлен"
+            statusText.setTextColor(ContextCompat.getColor(this, android.R.color.holo_red_light))
+            resetButton.isEnabled = false
         }
     }
 
@@ -77,6 +84,30 @@ class MasterPasswordActivity : AppCompatActivity() {
             } else {
                 Toast.makeText(this, "Пароли не совпадают или короткие", Toast.LENGTH_SHORT).show()
             }
+        }
+        resetButton.setOnClickListener {
+            AlertDialog.Builder(this)
+                .setTitle("Сброс мастер-пароля")
+                .setMessage("Вы действительно хотите сбросить мастер-пароль? Для расшифровки уже сохраненных паролей вам все-равно придется ввести заданный ранее мастер-пароль")
+                .setPositiveButton("Да") { _, _ ->
+                    // Удаляем только мастер-пароль и ключ
+                    val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+                    prefs.edit()
+                        .remove(MASTER_PASSWORD_HASH_KEY)
+                        .remove(MASTER_PASSWORD_SALT_KEY)
+                        .remove(MASTER_PASSWORD_KEY_KEY)
+                        .apply()
+
+                    Toast.makeText(this, "Мастер-пароль сброшен!", Toast.LENGTH_SHORT).show()
+                    checkMasterPasswordStatus() // <-- Обновляем UI
+
+                    // Активируем поля ввода
+                    passwordEditText.isEnabled = true
+                    confirmPasswordEditText.isEnabled = true
+                    setButton.isEnabled = true
+                }
+                .setNegativeButton("Нет", null)
+                .show()
         }
     }
 

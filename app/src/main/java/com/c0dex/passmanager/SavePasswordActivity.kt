@@ -54,23 +54,31 @@ class SavePasswordActivity : AppCompatActivity() {
             val password = generatedPasswordText.text.toString()
 
             if (description.isNotEmpty() && password.isNotEmpty()) {
-                val prefs = getSharedPreferences("password_prefs", MODE_PRIVATE)
-                val masterPasswordHash = prefs.getString("master_password_hash", "")
-                val keyString = prefs.getString("master_password_key", "") // <-- Получаем ключ
-
-                if (masterPasswordHash.isNullOrEmpty() || keyString.isNullOrEmpty()) {
-                    Toast.makeText(this, "Мастер-пароль не установлен!", Toast.LENGTH_SHORT).show()
-                    return@setOnClickListener
-                }
-
-                val keyBytes = Base64.decode(keyString, Base64.DEFAULT)
-                val key = SecretKeySpec(keyBytes, ALGORITHM) // <-- Создай SecretKey
-                val encryptedPassword = EncryptionHelper.encrypt(password, key) // <-- Передай ключ
-
-                // Сохраняем в базу
                 lifecycleScope.launch {
                     try {
+                        // Проверяем, есть ли уже такое описание
                         val db = PasswordDatabase.getDatabase(this@SavePasswordActivity)
+                        val count = db.passwordDao().getDescriptionCount(description)
+
+                        if (count > 0) {
+                            Toast.makeText(this@SavePasswordActivity, "Пароль с таким описанием уже существует!", Toast.LENGTH_SHORT).show()
+                            return@launch
+                        }
+
+                        // Продолжаем сохранение
+                        val prefs = getSharedPreferences("password_prefs", MODE_PRIVATE)
+                        val masterPasswordHash = prefs.getString("master_password_hash", "")
+                        val keyString = prefs.getString("master_password_key", "")
+
+                        if (masterPasswordHash.isNullOrEmpty() || keyString.isNullOrEmpty()) {
+                            Toast.makeText(this@SavePasswordActivity, "Мастер-пароль не установлен!", Toast.LENGTH_SHORT).show()
+                            return@launch
+                        }
+
+                        val keyBytes = Base64.decode(keyString, Base64.DEFAULT)
+                        val key = SecretKeySpec(keyBytes, ALGORITHM)
+                        val encryptedPassword = EncryptionHelper.encrypt(password, key)
+
                         val passwordItem = com.c0dex.passmanager.data.PasswordItem(
                             description = description,
                             encryptedPassword = encryptedPassword
@@ -79,7 +87,7 @@ class SavePasswordActivity : AppCompatActivity() {
 
                         Toast.makeText(this@SavePasswordActivity, "Пароль сохранён!", Toast.LENGTH_SHORT).show()
                         setResult(RESULT_OK)
-                        finish() // Закрываем Activity
+                        finish()
                     } catch (e: Exception) {
                         Toast.makeText(this@SavePasswordActivity, "Ошибка сохранения", Toast.LENGTH_SHORT).show()
                         e.printStackTrace()
@@ -90,6 +98,7 @@ class SavePasswordActivity : AppCompatActivity() {
             }
         }
     }
+
     override fun onSupportNavigateUp(): Boolean {
         onBackPressed()
         return true
