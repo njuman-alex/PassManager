@@ -6,10 +6,10 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
-import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.c0dex.passmanager.data.PasswordDatabase
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
 class PasswordListActivity : AppCompatActivity() {
@@ -22,7 +22,7 @@ class PasswordListActivity : AppCompatActivity() {
         androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == RESULT_OK) {
-            loadPasswords() // Обновляем список
+            // При возврате из ShowPasswordActivity не нужно перезагружать
         }
     }
 
@@ -51,9 +51,9 @@ class PasswordListActivity : AppCompatActivity() {
 
     private fun setupRecyclerView() {
         adapter = PasswordListAdapter { item ->
-            // Переход в ShowPasswordActivity
             val intent = Intent(this, ShowPasswordActivity::class.java)
-            intent.putExtra("PASSWORD_ID", item.id) // <-- Передаём id
+            intent.putExtra("PASSWORD_ID", item.id)
+            intent.putExtra("ENCRYPTED_PASSWORD", item.encryptedPassword) // Передаём зашифрованный пароль
             showPasswordLauncher.launch(intent)
         }
         recyclerView.layoutManager = LinearLayoutManager(this)
@@ -61,22 +61,25 @@ class PasswordListActivity : AppCompatActivity() {
     }
 
     private fun loadPasswords() {
-        lifecycleScope.launch {
+        GlobalScope.launch {
             try {
                 val db = PasswordDatabase.getDatabase(this@PasswordListActivity)
                 val passwords = db.passwordDao().getAllPasswords()
-                if (passwords.isEmpty()) {
-                    // Показываем сообщение
-                    recyclerView.visibility = android.view.View.GONE
-                    emptyMessageText.visibility = android.view.View.VISIBLE
-                } else {
-                    // Показываем список
-                    recyclerView.visibility = android.view.View.VISIBLE
-                    emptyMessageText.visibility = android.view.View.GONE
+
+                runOnUiThread {
+                    if (passwords.isEmpty()) {
+                        recyclerView.visibility = android.view.View.GONE
+                        emptyMessageText.visibility = android.view.View.VISIBLE
+                    } else {
+                        recyclerView.visibility = android.view.View.VISIBLE
+                        emptyMessageText.visibility = android.view.View.GONE
+                    }
+                    adapter.updatePasswords(passwords)
                 }
-                adapter.updatePasswords(passwords)
             } catch (e: Exception) {
-                Toast.makeText(this@PasswordListActivity, "Ошибка загрузки", Toast.LENGTH_SHORT).show()
+                runOnUiThread {
+                    Toast.makeText(this@PasswordListActivity, "Ошибка загрузки", Toast.LENGTH_SHORT).show()
+                }
                 e.printStackTrace()
             }
         }

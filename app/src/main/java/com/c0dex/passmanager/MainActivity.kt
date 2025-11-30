@@ -7,6 +7,7 @@ import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.drawerlayout.widget.DrawerLayout
@@ -100,25 +101,38 @@ class MainActivity : AppCompatActivity() {
             generatePassword()
         }
 
+        // В setupClickListeners(), в onClick saveButton:
+
         saveButton.setOnClickListener {
-            val intent = Intent(this, SavePasswordActivity::class.java)
-            intent.putExtra("GENERATED_PASSWORD", generatedPasswordText.text.toString())
-            savePasswordLauncher.launch(intent) // Используем launcher
+            val password = generatedPasswordText.text.toString()
+
+            if (password.isNotEmpty()) {
+                val intent = Intent(this, SavePasswordActivity::class.java)
+                intent.putExtra("GENERATED_PASSWORD", password)
+
+                val prefs = getSharedPreferences("password_prefs", MODE_PRIVATE)
+                val hasMasterPassword = prefs.getBoolean("master_password_set", false)
+
+                if (hasMasterPassword) {
+                    savePasswordLauncher.launch(intent)
+                } else {
+                    Toast.makeText(this, "Мастер-пароль не установлен", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Toast.makeText(this, "Сначала сгенерируйте пароль", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
     private fun checkMasterPasswordStatus() {
         val prefs = getSharedPreferences("password_prefs", MODE_PRIVATE)
-        val hasMasterPassword = prefs.contains("master_password_hash")
+        val hasMasterPassword = prefs.getBoolean("master_password_set", false)
 
         if (!hasMasterPassword) {
-            // Мастер-пароль не установлен
             masterPasswordStatusText.visibility = View.VISIBLE
             saveButton.isEnabled = false
         } else {
-            // Мастер-пароль установлен
             masterPasswordStatusText.visibility = View.GONE
-            // Проверяем, есть ли сгенерированный пароль
             saveButton.isEnabled = generatedPasswordText.text.toString().isNotEmpty()
         }
     }

@@ -6,12 +6,13 @@ import androidx.room.RoomDatabase
 import android.content.Context
 
 @Database(
-    entities = [PasswordItem::class],
-    version = 1,
+    entities = [PasswordItem::class, MasterPasswordItem::class],
+    version = 2, // Увеличиваем версию
     exportSchema = false
 )
 abstract class PasswordDatabase : RoomDatabase() {
     abstract fun passwordDao(): PasswordDao
+    abstract fun masterPasswordDao(): MasterPasswordDao
 
     companion object {
         @Volatile

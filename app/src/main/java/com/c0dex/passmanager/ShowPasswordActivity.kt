@@ -1,7 +1,6 @@
 package com.c0dex.passmanager
 
 import android.os.Bundle
-import android.util.Base64
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
@@ -30,7 +29,9 @@ class ShowPasswordActivity : AppCompatActivity() {
         setContentView(R.layout.activity_show_password)
 
         currentPasswordId = intent.getLongExtra("PASSWORD_ID", -1)
-        if (currentPasswordId == -1L) {
+        currentEncryptedPassword = intent.getStringExtra("ENCRYPTED_PASSWORD") ?: ""
+
+        if (currentPasswordId == -1L || currentEncryptedPassword.isEmpty()) {
             Toast.makeText(this, "Ошибка: пароль не найден", Toast.LENGTH_SHORT).show()
             finish()
             return
@@ -64,36 +65,19 @@ class ShowPasswordActivity : AppCompatActivity() {
             val enteredMasterPassword = masterPasswordEditText.text.toString()
 
             if (enteredMasterPassword.isNotEmpty()) {
-                val prefs = getSharedPreferences("password_prefs", MODE_PRIVATE)
-                val masterPasswordHash = prefs.getString("master_password_hash", "")
-                val saltString = prefs.getString("master_password_salt", "")
-
-                if (masterPasswordHash.isNullOrEmpty() || saltString.isNullOrEmpty()) {
-                    Toast.makeText(this, "Мастер-пароль не установлен!", Toast.LENGTH_SHORT).show()
-                    return@setOnClickListener
-                }
-
-                // Проверяем, правильный ли мастер-пароль
-                if (enteredMasterPassword.hashCode().toString() != masterPasswordHash) {
-                    Toast.makeText(this, "Неверный мастер-пароль", Toast.LENGTH_SHORT).show()
-                    return@setOnClickListener
-                }
-
-                val salt = Base64.decode(saltString, Base64.DEFAULT)
-                val decryptedPassword = EncryptionHelper.decrypt(currentEncryptedPassword, enteredMasterPassword, salt) // <-- Введённый пароль и соль
+                // Расшифровываем пароль
+                val decryptedPassword = EncryptionHelper.decrypt(currentEncryptedPassword, enteredMasterPassword)
 
                 if (decryptedPassword != null) {
-                    // Успешно расшифровано
-                    descriptionText.text = currentDescription
                     passwordText.text = decryptedPassword
-                    //passwordText.visibility = android.view.View.VISIBLE
-                    passwordText.text = decryptedPassword
+                    decryptButton.isEnabled = false
+                    masterPasswordEditText.isEnabled = false
                     editDescriptionButton.isEnabled = true
                     deletePasswordButton.isEnabled = true
                     descriptionText.isEnabled = true
                     Toast.makeText(this, "Пароль расшифрован!", Toast.LENGTH_SHORT).show()
                 } else {
-                    Toast.makeText(this, "Ошибка расшифровки", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Неверный мастер-пароль", Toast.LENGTH_SHORT).show()
                 }
             } else {
                 Toast.makeText(this, "Введите мастер-пароль", Toast.LENGTH_SHORT).show()
@@ -109,7 +93,7 @@ class ShowPasswordActivity : AppCompatActivity() {
                         db.passwordDao().updateDescription(currentPasswordId, newDescription)
 
                         Toast.makeText(this@ShowPasswordActivity, "Описание обновлено!", Toast.LENGTH_SHORT).show()
-                        currentDescription = newDescription // Обновляем локально
+                        currentDescription = newDescription
                     } catch (e: Exception) {
                         Toast.makeText(this@ShowPasswordActivity, "Ошибка обновления", Toast.LENGTH_SHORT).show()
                         e.printStackTrace()
@@ -125,8 +109,8 @@ class ShowPasswordActivity : AppCompatActivity() {
                     val db = PasswordDatabase.getDatabase(this@ShowPasswordActivity)
                     db.passwordDao().deletePassword(currentPasswordId)
                     Toast.makeText(this@ShowPasswordActivity, "Пароль удалён!", Toast.LENGTH_SHORT).show()
-                    setResult(RESULT_OK) // <-- Уведомляем, что были изменения
-                    finish() // <-- Закрываем активити
+                    setResult(RESULT_OK)
+                    finish()
                 } catch (e: Exception) {
                     Toast.makeText(this@ShowPasswordActivity, "Ошибка удаления", Toast.LENGTH_SHORT).show()
                     e.printStackTrace()
@@ -142,11 +126,8 @@ class ShowPasswordActivity : AppCompatActivity() {
                 val passwordItem = db.passwordDao().getPasswordById(currentPasswordId)
 
                 if (passwordItem != null) {
-                    currentEncryptedPassword = passwordItem.encryptedPassword
                     currentDescription = passwordItem.description
-                    // Показываем только описание, пока не расшифровали
                     descriptionText.text = currentDescription
-                    //passwordText.visibility = android.view.View.GONE // <-- Скрыто до расшифровки
                     passwordText.text = "Расшифруйте пароль"
                 } else {
                     Toast.makeText(this@ShowPasswordActivity, "Пароль не найден", Toast.LENGTH_SHORT).show()

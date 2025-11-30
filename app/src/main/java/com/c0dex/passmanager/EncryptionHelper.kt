@@ -2,29 +2,32 @@ package com.c0dex.passmanager
 
 import android.util.Base64
 import javax.crypto.Cipher
-import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
 import javax.crypto.spec.IvParameterSpec
-import javax.crypto.SecretKeyFactory
 import java.security.SecureRandom
-import javax.crypto.SecretKey
+import java.util.Arrays
 
 object EncryptionHelper {
 
     private const val ALGORITHM = "AES"
     private const val TRANSFORMATION = "AES/CBC/PKCS5Padding"
-    private const val KEY_ALGORITHM = "PBKDF2WithHmacSHA256"
-    private const val ITERATION_COUNT = 10000
-    private const val KEY_LENGTH = 256
 
-    fun generateKey(password: String, salt: ByteArray): SecretKey {
-        val keySpec = PBEKeySpec(password.toCharArray(), salt, ITERATION_COUNT, KEY_LENGTH)
-        val keyFactory = SecretKeyFactory.getInstance(KEY_ALGORITHM)
-        val key = keyFactory.generateSecret(keySpec)
-        return SecretKeySpec(key.encoded, ALGORITHM)
+    private fun createKeyFromPassword(password: String): SecretKeySpec {
+        val keyBytes = password.toByteArray(Charsets.UTF_8)
+        val key = ByteArray(32) // AES-256
+        if (keyBytes.size > 32) {
+            // Обрезаем, если длиннее 32
+            System.arraycopy(keyBytes, 0, key, 0, 32)
+        } else {
+            // Дополняем нулями, если короче
+            System.arraycopy(keyBytes, 0, key, 0, keyBytes.size)
+            Arrays.fill(key, keyBytes.size, 32, 0.toByte())
+        }
+        return SecretKeySpec(key, ALGORITHM)
     }
 
-    fun encrypt(data: String, key: SecretKey): String {
+    fun encrypt(data: String, password: String): String {
+        val key = createKeyFromPassword(password)
         val iv = ByteArray(16)
         SecureRandom().nextBytes(iv)
 
@@ -33,7 +36,6 @@ object EncryptionHelper {
 
         val encryptedData = cipher.doFinal(data.toByteArray(Charsets.UTF_8))
 
-        // Объединяем iv + encryptedData
         val result = ByteArray(iv.size + encryptedData.size)
         System.arraycopy(iv, 0, result, 0, iv.size)
         System.arraycopy(encryptedData, 0, result, iv.size, encryptedData.size)
@@ -41,7 +43,7 @@ object EncryptionHelper {
         return Base64.encodeToString(result, Base64.DEFAULT)
     }
 
-    fun decrypt(encryptedData: String, password: String, salt: ByteArray): String? {
+    fun decrypt(encryptedData: String, password: String): String? {
         try {
             val data = Base64.decode(encryptedData, Base64.DEFAULT)
 
@@ -51,7 +53,7 @@ object EncryptionHelper {
             System.arraycopy(data, 0, iv, 0, iv.size)
             System.arraycopy(data, iv.size, encryptedBytes, 0, encryptedBytes.size)
 
-            val key = generateKey(password, salt)
+            val key = createKeyFromPassword(password)
 
             val cipher = Cipher.getInstance(TRANSFORMATION)
             cipher.init(Cipher.DECRYPT_MODE, key, IvParameterSpec(iv))

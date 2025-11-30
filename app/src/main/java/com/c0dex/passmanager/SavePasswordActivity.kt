@@ -1,7 +1,6 @@
 package com.c0dex.passmanager
 
 import android.os.Bundle
-import android.util.Base64
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
@@ -11,15 +10,12 @@ import androidx.appcompat.widget.Toolbar
 import androidx.lifecycle.lifecycleScope
 import com.c0dex.passmanager.data.PasswordDatabase
 import kotlinx.coroutines.launch
-import javax.crypto.spec.SecretKeySpec
 
 class SavePasswordActivity : AppCompatActivity() {
     private lateinit var generatedPasswordText: TextView
     private lateinit var descriptionEditText: EditText
     private lateinit var saveButton: Button
     private lateinit var toolbar: Toolbar
-    companion object {private const val ALGORITHM = "AES"}
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,7 +25,6 @@ class SavePasswordActivity : AppCompatActivity() {
         setupToolbar()
         setupClickListeners()
 
-        // Получаем сгенерированный пароль из Intent
         val generatedPassword = intent.getStringExtra("GENERATED_PASSWORD")
         generatedPasswordText.text = generatedPassword
     }
@@ -41,7 +36,7 @@ class SavePasswordActivity : AppCompatActivity() {
         toolbar = findViewById(R.id.toolbar)
     }
 
-    private fun setupToolbar() { // <-- Добавь
+    private fun setupToolbar() {
         setSupportActionBar(toolbar)
 
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
@@ -56,7 +51,6 @@ class SavePasswordActivity : AppCompatActivity() {
             if (description.isNotEmpty() && password.isNotEmpty()) {
                 lifecycleScope.launch {
                     try {
-                        // Проверяем, есть ли уже такое описание
                         val db = PasswordDatabase.getDatabase(this@SavePasswordActivity)
                         val count = db.passwordDao().getDescriptionCount(description)
 
@@ -65,19 +59,17 @@ class SavePasswordActivity : AppCompatActivity() {
                             return@launch
                         }
 
-                        // Продолжаем сохранение
+                        // Получаем мастер-пароль из prefs
                         val prefs = getSharedPreferences("password_prefs", MODE_PRIVATE)
-                        val masterPasswordHash = prefs.getString("master_password_hash", "")
-                        val keyString = prefs.getString("master_password_key", "")
+                        val masterPassword = prefs.getString("master_password", "") ?: ""
 
-                        if (masterPasswordHash.isNullOrEmpty() || keyString.isNullOrEmpty()) {
+                        if (masterPassword.isEmpty()) {
                             Toast.makeText(this@SavePasswordActivity, "Мастер-пароль не установлен!", Toast.LENGTH_SHORT).show()
                             return@launch
                         }
 
-                        val keyBytes = Base64.decode(keyString, Base64.DEFAULT)
-                        val key = SecretKeySpec(keyBytes, ALGORITHM)
-                        val encryptedPassword = EncryptionHelper.encrypt(password, key)
+                        // Шифруем пароль с помощью мастера
+                        val encryptedPassword = EncryptionHelper.encrypt(password, masterPassword)
 
                         val passwordItem = com.c0dex.passmanager.data.PasswordItem(
                             description = description,
