@@ -6,10 +6,10 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.c0dex.passmanager.data.PasswordDatabase
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
 class PasswordListActivity : AppCompatActivity() {
@@ -62,7 +62,7 @@ class PasswordListActivity : AppCompatActivity() {
     }
 
     private fun loadPasswords() {
-        GlobalScope.launch {
+        lifecycleScope.launch {
             try {
                 val db = PasswordDatabase.getDatabase(this@PasswordListActivity)
                 val passwords = db.passwordDao().getAllPasswords()

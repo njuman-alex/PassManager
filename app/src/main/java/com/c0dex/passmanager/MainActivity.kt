@@ -1,5 +1,7 @@
 package com.c0dex.passmanager
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
@@ -20,6 +22,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var useSpecialCheckBox: CheckBox
     private lateinit var passwordLengthEditText: EditText
     private lateinit var generateButton: Button
+    private lateinit var copyButton: Button
     private lateinit var saveButton: Button
     private lateinit var toolbar: Toolbar
     private lateinit var drawerLayout: DrawerLayout
@@ -65,6 +68,7 @@ class MainActivity : AppCompatActivity() {
         useSpecialCheckBox = findViewById(R.id.useSpecialCheckBox)
         passwordLengthEditText = findViewById(R.id.passwordLengthEditText)
         generateButton = findViewById(R.id.generateButton)
+        copyButton = findViewById(R.id.copyButton)
         saveButton = findViewById(R.id.saveButton)
         toolbar = findViewById(R.id.toolbar)
         drawerLayout = findViewById(R.id.drawerLayout)
@@ -111,7 +115,12 @@ class MainActivity : AppCompatActivity() {
             generatePassword()
         }
 
-        // В setupClickListeners(), в onClick saveButton:
+        copyButton.setOnClickListener {
+            val clipboardManager = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+            val clipData = ClipData.newPlainText("password", generatedPasswordText.text.toString())
+            clipboardManager.setPrimaryClip(clipData)
+        }
+
 
         saveButton.setOnClickListener {
             val password = generatedPasswordText.text.toString()
@@ -141,9 +150,11 @@ class MainActivity : AppCompatActivity() {
         if (!hasMasterPassword) {
             masterPasswordStatusText.visibility = View.VISIBLE
             saveButton.isEnabled = false
+            copyButton.isEnabled = false
         } else {
             masterPasswordStatusText.visibility = View.GONE
             saveButton.isEnabled = generatedPasswordText.text.toString().isNotEmpty()
+            copyButton.isEnabled = generatedPasswordText.text.toString().isNotEmpty()
         }
     }
 
