@@ -84,10 +84,17 @@
                     android:layout_marginBottom="8dp" />
 
                 <CheckBox
-                    android:id="@+id/useDigitsAndSpecialCheckBox"
+                    android:id="@+id/useDigitsCheckBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Использовать цифры и спецсимволы"
+                    android:text="Использовать цифры"
+                    android:layout_marginBottom="8dp" />
+
+                <CheckBox
+                    android:id="@+id/useSpecialCheckBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Использовать спецсимволы"
                     android:layout_marginBottom="16dp" />
 
                 <TextView

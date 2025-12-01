@@ -16,7 +16,8 @@ import com.google.android.material.navigation.NavigationView
 class MainActivity : AppCompatActivity() {
     private lateinit var generatedPasswordText: TextView
     private lateinit var useLettersCheckBox: CheckBox
-    private lateinit var useDigitsAndSpecialCheckBox: CheckBox
+    private lateinit var useDigitsCheckBox: CheckBox
+    private lateinit var useSpecialCheckBox: CheckBox
     private lateinit var passwordLengthEditText: EditText
     private lateinit var generateButton: Button
     private lateinit var saveButton: Button
@@ -60,7 +61,8 @@ class MainActivity : AppCompatActivity() {
     private fun initViews() {
         generatedPasswordText = findViewById(R.id.generatedPasswordText)
         useLettersCheckBox = findViewById(R.id.useLettersCheckBox)
-        useDigitsAndSpecialCheckBox = findViewById(R.id.useDigitsAndSpecialCheckBox)
+        useDigitsCheckBox = findViewById(R.id.useDigitsCheckBox)
+        useSpecialCheckBox = findViewById(R.id.useSpecialCheckBox)
         passwordLengthEditText = findViewById(R.id.passwordLengthEditText)
         generateButton = findViewById(R.id.generateButton)
         saveButton = findViewById(R.id.saveButton)
@@ -148,9 +150,10 @@ class MainActivity : AppCompatActivity() {
     private fun generatePassword() {
         val length = passwordLengthEditText.text.toString().toIntOrNull() ?: 8
         val useLetters = useLettersCheckBox.isChecked
-        val useDigitsAndSpecial = useDigitsAndSpecialCheckBox.isChecked
+        val useDigits = useDigitsCheckBox.isChecked
+        val useSpecial = useSpecialCheckBox.isChecked
 
-        val password = generatePasswordString(length, useLetters, useDigitsAndSpecial)
+        val password = generatePasswordString(length, useLetters, useDigits, useSpecial)
         generatedPasswordText.text = password
 
         // Обновляем статус кнопки
@@ -160,7 +163,8 @@ class MainActivity : AppCompatActivity() {
     private fun generatePasswordString(
         length: Int,
         useLetters: Boolean,
-        useDigitsAndSpecial: Boolean
+        useDigits: Boolean,
+        useSpecial: Boolean
     ): String {
         if (length <= 0) return ""
 
@@ -168,8 +172,10 @@ class MainActivity : AppCompatActivity() {
         if (useLetters) {
             chars += "ABCDEFGHJKMNPQRSTUVWXYZ"
         }
-        if (useDigitsAndSpecial) {
+        if (useDigits) {
             chars += "23456789"
+        }
+        if (useSpecial) {
             chars += "!@#$%^&*()_+-=[]{}|;:,.<>?"
         }
 
