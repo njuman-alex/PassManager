@@ -88,7 +88,7 @@ class MainActivity : AppCompatActivity() {
                     masterPasswordLauncher.launch(Intent(this, MasterPasswordActivity::class.java))
                 }
                 R.id.nav_settings -> {
-                    //startActivity(Intent(this, SettingsActivity::class.java))
+                    startActivity(Intent(this, SettingsActivity::class.java))
                 }
             }
             drawerLayout.closeDrawers()
@@ -138,7 +138,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun generatePassword() {
-        val length = passwordLengthEditText.text.toString().toIntOrNull() ?: 12
+        val length = passwordLengthEditText.text.toString().toIntOrNull() ?: 8
         val useLetters = useLettersCheckBox.isChecked
         val useDigitsAndSpecial = useDigitsAndSpecialCheckBox.isChecked
 

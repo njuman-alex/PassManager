@@ -17,9 +17,13 @@ interface PasswordDao {
 
     @Query("SELECT * FROM passwords WHERE id = :id")
     suspend fun getPasswordById(id: Long): PasswordItem?
+
     @Query("UPDATE passwords SET description = :newDescription WHERE id = :id")
     suspend fun updateDescription(id: Long, newDescription: String)
 
     @Query("SELECT COUNT(*) FROM passwords WHERE description = :description")
     suspend fun getDescriptionCount(description: String): Int
+
+    @Query("DELETE FROM passwords") // <-- Добавили
+    suspend fun deleteAllPasswords()
 }
