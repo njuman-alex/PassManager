@@ -1,5 +1,7 @@
 package com.c0dex.passmanager
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
@@ -16,6 +18,7 @@ class ShowPasswordActivity : AppCompatActivity() {
     private lateinit var passwordText: TextView
     private lateinit var masterPasswordEditText: EditText
     private lateinit var decryptButton: Button
+    private lateinit var copyButton: Button
     private lateinit var editDescriptionButton: Button
     private lateinit var deletePasswordButton: Button
     private lateinit var toolbar: Toolbar
@@ -48,6 +51,7 @@ class ShowPasswordActivity : AppCompatActivity() {
         passwordText = findViewById(R.id.passwordText)
         masterPasswordEditText = findViewById(R.id.masterPasswordEditText)
         decryptButton = findViewById(R.id.decryptButton)
+        copyButton = findViewById(R.id.copyButton)
         editDescriptionButton = findViewById(R.id.editDescriptionButton)
         deletePasswordButton = findViewById(R.id.deletePasswordButton)
         toolbar = findViewById(R.id.toolbar)
@@ -73,6 +77,7 @@ class ShowPasswordActivity : AppCompatActivity() {
                     decryptButton.isEnabled = false
                     masterPasswordEditText.isEnabled = false
                     editDescriptionButton.isEnabled = true
+                    copyButton.isEnabled = true
                     deletePasswordButton.isEnabled = true
                     descriptionText.isEnabled = true
                     Toast.makeText(this, "Пароль расшифрован!", Toast.LENGTH_SHORT).show()
@@ -83,6 +88,13 @@ class ShowPasswordActivity : AppCompatActivity() {
                 Toast.makeText(this, "Введите мастер-пароль", Toast.LENGTH_SHORT).show()
             }
         }
+
+        copyButton.setOnClickListener {
+            val clipboardManager = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+            val clipData = ClipData.newPlainText("password", passwordText.text.toString())
+            clipboardManager.setPrimaryClip(clipData)
+        }
+
         editDescriptionButton.setOnClickListener {
             val newDescription = descriptionText.text.toString()
 
@@ -143,7 +155,8 @@ class ShowPasswordActivity : AppCompatActivity() {
 
     override fun onSupportNavigateUp(): Boolean {
         setResult(RESULT_OK)
-        onBackPressed()
+        //onBackPressed()
+        finish()
         return true
     }
 }
