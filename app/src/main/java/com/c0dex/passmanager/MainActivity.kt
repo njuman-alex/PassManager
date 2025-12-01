@@ -116,9 +116,15 @@ class MainActivity : AppCompatActivity() {
         }
 
         copyButton.setOnClickListener {
-            val clipboardManager = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
-            val clipData = ClipData.newPlainText("password", generatedPasswordText.text.toString())
-            clipboardManager.setPrimaryClip(clipData)
+            try {
+                val clipboardManager = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+                val clipData = ClipData.newPlainText("password", generatedPasswordText.text.toString())
+                clipboardManager.setPrimaryClip(clipData)
+                Toast.makeText(this, "Пароль скопирован", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                Toast.makeText(this, "Ошибка копирования", Toast.LENGTH_SHORT).show()
+                e.printStackTrace()
+            }
         }
 
 
