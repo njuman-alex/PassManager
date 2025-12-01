@@ -22,7 +22,8 @@ class PasswordListActivity : AppCompatActivity() {
         androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == RESULT_OK) {
-            // При возврате из ShowPasswordActivity не нужно перезагружать
+            // При возврате из ShowPasswordActivity
+            loadPasswords()
         }
     }
 

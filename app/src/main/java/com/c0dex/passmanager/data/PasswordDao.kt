@@ -9,6 +9,9 @@ interface PasswordDao {
     @Insert
     suspend fun insertPassword(passwordItem: PasswordItem)
 
+    @Insert
+    suspend fun insertPasswords(passwordItems: List<PasswordItem>)
+
     @Query("SELECT * FROM passwords")
     suspend fun getAllPasswords(): List<PasswordItem>
 

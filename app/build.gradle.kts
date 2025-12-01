@@ -8,16 +8,20 @@ plugins {
 
 android {
     namespace = "com.c0dex.passmanager"
+    buildFeatures {
+        buildConfig = true
+    }
     compileSdk {
         version = release(36)
     }
+
 
     defaultConfig {
         applicationId = "com.c0dex.passmanager"
         minSdk = 24
         targetSdk = 36
-        versionCode = 8
-        versionName = "8.2"
+        versionCode = 9
+        versionName = "9.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -69,4 +73,5 @@ dependencies {
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
     kapt("androidx.room:room-compiler:2.6.1")
+    implementation("com.google.code.gson:gson:2.13.2")
 }

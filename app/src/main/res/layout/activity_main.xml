@@ -25,10 +25,26 @@
             app:title="Менеджер паролей"
             android:layout_marginBottom="16dp" />
 
+        <TextView
+            android:id="@+id/textInfo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:shadowColor="#000000"
+            android:shadowDx="1"
+            android:shadowDy="1"
+            android:shadowRadius="2"
+            android:text="Александр Бородинов (c0dex)"
+            android:textColor="#000"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="16dp"/>
+
         <!-- Карточка с генератором -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
             android:layout_marginBottom="16dp"
             app:cardElevation="4dp"
             app:cardCornerRadius="8dp"
@@ -115,9 +131,19 @@
                     android:layout_marginTop="8dp"
                     android:visibility="gone" />
 
+
             </LinearLayout>
 
+
         </com.google.android.material.card.MaterialCardView>
+        <TextView
+            android:id="@+id/versionText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="ver. 0.0"
+            android:gravity="center"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp" />
 
     </LinearLayout>
 

@@ -24,6 +24,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var navigationView: NavigationView
     private lateinit var masterPasswordStatusText: TextView
+    private lateinit var versionText: TextView
 
     private val masterPasswordLauncher = registerForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
@@ -53,6 +54,7 @@ class MainActivity : AppCompatActivity() {
         setupDrawer()
         setupClickListeners()
         checkMasterPasswordStatus() // Проверяем при запуске
+        setVersion()
     }
 
     private fun initViews() {
@@ -66,6 +68,7 @@ class MainActivity : AppCompatActivity() {
         drawerLayout = findViewById(R.id.drawerLayout)
         navigationView = findViewById(R.id.navigationView)
         masterPasswordStatusText = findViewById(R.id.masterPasswordStatusText)
+        versionText = findViewById(R.id.versionText)
     }
 
     private fun setupToolbar() {
@@ -94,6 +97,11 @@ class MainActivity : AppCompatActivity() {
             drawerLayout.closeDrawers()
             true
         }
+    }
+
+    private fun setVersion() {
+        val versionName = BuildConfig.VERSION_NAME
+        versionText.text = "ver. $versionName"
     }
 
     private fun setupClickListeners() {
