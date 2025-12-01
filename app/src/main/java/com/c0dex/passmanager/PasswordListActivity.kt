@@ -88,7 +88,8 @@ class PasswordListActivity : AppCompatActivity() {
 
     override fun onSupportNavigateUp(): Boolean {
         setResult(RESULT_OK)
-        onBackPressed()
+        //onBackPressed()
+        finish()
         return true
     }
 }

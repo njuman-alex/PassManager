@@ -115,7 +115,8 @@ class MasterPasswordActivity : AppCompatActivity() {
     }
 
     override fun onSupportNavigateUp(): Boolean {
-        onBackPressed()
+        //onBackPressed()
+        finish()
         return true
     }
 }
