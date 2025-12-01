@@ -9,7 +9,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
 import androidx.appcompat.app.AlertDialog
-import androidx.lifecycle.lifecycleScope
 
 class MasterPasswordActivity : AppCompatActivity() {
     private lateinit var passwordEditText: EditText
