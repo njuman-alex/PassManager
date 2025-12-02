@@ -35,7 +35,6 @@
             android:shadowDy="1"
             android:shadowRadius="2"
             android:text="Александр Бородинов (c0dex)"
-            android:textColor="#000"
             android:textSize="20sp"
             android:textStyle="bold"
             android:layout_marginBottom="16dp"/>
