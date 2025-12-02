@@ -56,13 +56,11 @@ class SettingsActivity : AppCompatActivity() {
     private fun setupClickListeners() {
         exportButton.setOnClickListener {
             //Toast.makeText(this, "Экспорт базы паролей", Toast.LENGTH_SHORT).show()
-            // TODO: Реализовать экспорт
             exportPasswords()
         }
 
         importButton.setOnClickListener {
             //Toast.makeText(this, "Импорт базы паролей", Toast.LENGTH_SHORT).show()
-            // TODO: Реализовать импорт
             importPasswords()
         }
 
@@ -155,23 +153,18 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun importPasswords() {
-        //val dialogView = layoutInflater.inflate(R.layout.dialog_delete_all, null)
-        val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
-            type = "application/json"
-            addCategory(Intent.CATEGORY_OPENABLE)
-        }
-
-        AlertDialog.Builder(this)
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
             .setTitle("Импортировать?")
             .setMessage("Все текущие пароли будут заменены!")
-            //.setView(dialogView)
             .setPositiveButton("Импорт") { _, _ ->
+                val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                    type = "application/json"
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                }
                 importFileLauncher.launch(intent)
             }
             .setNegativeButton("Отмена", null)
             .show()
-
-        //importFileLauncher.launch(intent)
     }
 
     private val importFileLauncher = registerForActivityResult(
