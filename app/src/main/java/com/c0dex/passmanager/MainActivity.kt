@@ -153,15 +153,17 @@ class MainActivity : AppCompatActivity() {
         val prefs = getSharedPreferences("password_prefs", MODE_PRIVATE)
         val hasMasterPassword = prefs.getBoolean("master_password_set", false)
 
+        // Статус мастер-пароля
         if (!hasMasterPassword) {
             masterPasswordStatusText.visibility = View.VISIBLE
             saveButton.isEnabled = false
-            copyButton.isEnabled = false
         } else {
             masterPasswordStatusText.visibility = View.GONE
-            saveButton.isEnabled = generatedPasswordText.text.toString().isNotEmpty()
-            copyButton.isEnabled = generatedPasswordText.text.toString().isNotEmpty()
+            saveButton.isEnabled = generatedPasswordText.text.isNotEmpty()
         }
+
+        // Кнопка "Копировать" доступна, если есть сгенерированный пароль — независимо от мастер-пароля
+        copyButton.isEnabled = generatedPasswordText.text.isNotEmpty()
     }
 
     private fun generatePassword() {
@@ -172,6 +174,17 @@ class MainActivity : AppCompatActivity() {
 
         val password = generatePasswordString(length, useLetters, useDigits, useSpecial)
         generatedPasswordText.text = password
+
+        // Сбрасываем видимость (на случай, если был gone)
+        generatedPasswordText.alpha = 0f
+        generatedPasswordText.visibility = View.VISIBLE
+
+// Анимация появления
+        generatedPasswordText.animate()
+            .alpha(1f)
+            .setDuration(200)
+            .setListener(null) // убираем лишний listener
+            .start()
 
         // Обновляем статус кнопки
         checkMasterPasswordStatus()

@@ -14,7 +14,7 @@ import com.c0dex.passmanager.data.PasswordDatabase
 import kotlinx.coroutines.launch
 
 class ShowPasswordActivity : AppCompatActivity() {
-    private lateinit var descriptionText: TextView
+    private lateinit var descriptionText: EditText // <-- теперь EditText!
     private lateinit var passwordText: TextView
     private lateinit var masterPasswordEditText: EditText
     private lateinit var decryptButton: Button
@@ -59,27 +59,30 @@ class ShowPasswordActivity : AppCompatActivity() {
 
     private fun setupToolbar() {
         setSupportActionBar(toolbar)
-
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.setDisplayShowHomeEnabled(true)
     }
 
     private fun setupClickListeners() {
         decryptButton.setOnClickListener {
-            val enteredMasterPassword = masterPasswordEditText.text.toString()
+            val enteredMasterPassword = masterPasswordEditText.text.toString().trim()
 
             if (enteredMasterPassword.isNotEmpty()) {
-                // Расшифровываем пароль
                 val decryptedPassword = EncryptionHelper.decrypt(currentEncryptedPassword, enteredMasterPassword)
 
                 if (decryptedPassword != null) {
                     passwordText.text = decryptedPassword
                     decryptButton.isEnabled = false
-                    masterPasswordEditText.isEnabled = false
+                    masterPasswordEditText.setText("") // 🔒 очищаем сразу!
                     editDescriptionButton.isEnabled = true
                     copyButton.isEnabled = true
                     deletePasswordButton.isEnabled = true
+
+                    // Разрешаем редактировать описание (но не активируем сразу)
                     descriptionText.isEnabled = true
+                    descriptionText.isFocusable = true
+                    descriptionText.isFocusableInTouchMode = true
+
                     Toast.makeText(this, "Пароль расшифрован!", Toast.LENGTH_SHORT).show()
                 } else {
                     Toast.makeText(this, "Неверный мастер-пароль", Toast.LENGTH_SHORT).show()
@@ -91,37 +94,49 @@ class ShowPasswordActivity : AppCompatActivity() {
 
         copyButton.setOnClickListener {
             try {
-                val clipboardManager = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
-                val clipData = ClipData.newPlainText("password", passwordText.text.toString())
-                clipboardManager.setPrimaryClip(clipData)
+                val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+                clipboard.setPrimaryClip(ClipData.newPlainText("password", passwordText.text))
                 Toast.makeText(this, "Пароль скопирован", Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
                 Toast.makeText(this, "Ошибка копирования", Toast.LENGTH_SHORT).show()
-                e.printStackTrace()
             }
         }
 
         editDescriptionButton.setOnClickListener {
-            val newDescription = descriptionText.text.toString()
-
-            if (newDescription.isNotEmpty()) {
-                lifecycleScope.launch {
-                    try {
-                        val db = PasswordDatabase.getDatabase(this@ShowPasswordActivity)
-                        db.passwordDao().updateDescription(currentPasswordId, newDescription)
-
-                        Toast.makeText(this@ShowPasswordActivity, "Описание обновлено!", Toast.LENGTH_SHORT).show()
-                        currentDescription = newDescription
-                    } catch (e: Exception) {
-                        Toast.makeText(this@ShowPasswordActivity, "Ошибка обновления", Toast.LENGTH_SHORT).show()
-                        e.printStackTrace()
-                    }
-                }
+            if (editDescriptionButton.text == "Изменить описание") {
+                // Переключаемся в режим редактирования
+                descriptionText.isEnabled = true
+                descriptionText.isFocusable = true
+                descriptionText.isFocusableInTouchMode = true
+                descriptionText.requestFocus()
+                editDescriptionButton.text = "Сохранить описание"
             } else {
-                Toast.makeText(this, "Введите описание", Toast.LENGTH_SHORT).show()
+                // Сохраняем
+                val newDesc = descriptionText.text.toString().trim()
+                if (newDesc.isNotEmpty()) {
+                    lifecycleScope.launch {
+                        try {
+                            val db = PasswordDatabase.getDatabase(this@ShowPasswordActivity)
+                            db.passwordDao().updateDescription(currentPasswordId, newDesc)
+                            currentDescription = newDesc
+                            Toast.makeText(this@ShowPasswordActivity, "Описание обновлено!", Toast.LENGTH_SHORT).show()
+
+                            // Блокируем поле после сохранения
+                            descriptionText.isEnabled = false
+                            descriptionText.isFocusable = false
+                            editDescriptionButton.text = "Изменить описание"
+                        } catch (e: Exception) {
+                            Toast.makeText(this@ShowPasswordActivity, "Ошибка обновления", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                } else {
+                    Toast.makeText(this, "Описание не может быть пустым", Toast.LENGTH_SHORT).show()
+                }
             }
         }
+
         deletePasswordButton.setOnClickListener {
+            deletePasswordButton.isEnabled = false // блокируем повтор
             lifecycleScope.launch {
                 try {
                     val db = PasswordDatabase.getDatabase(this@ShowPasswordActivity)
@@ -131,7 +146,7 @@ class ShowPasswordActivity : AppCompatActivity() {
                     finish()
                 } catch (e: Exception) {
                     Toast.makeText(this@ShowPasswordActivity, "Ошибка удаления", Toast.LENGTH_SHORT).show()
-                    e.printStackTrace()
+                    deletePasswordButton.isEnabled = true // разблокируем при ошибке
                 }
             }
         }
@@ -141,19 +156,21 @@ class ShowPasswordActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 val db = PasswordDatabase.getDatabase(this@ShowPasswordActivity)
-                val passwordItem = db.passwordDao().getPasswordById(currentPasswordId)
-
-                if (passwordItem != null) {
-                    currentDescription = passwordItem.description
-                    descriptionText.text = currentDescription
+                val item = db.passwordDao().getPasswordById(currentPasswordId)
+                if (item != null) {
+                    currentDescription = item.description
+                    descriptionText.setText(currentDescription)
                     passwordText.text = "Расшифруйте пароль"
+
+                    // Блокируем описание до расшифровки
+                    descriptionText.isEnabled = false
+                    descriptionText.isFocusable = false
                 } else {
                     Toast.makeText(this@ShowPasswordActivity, "Пароль не найден", Toast.LENGTH_SHORT).show()
                     finish()
                 }
             } catch (e: Exception) {
                 Toast.makeText(this@ShowPasswordActivity, "Ошибка загрузки", Toast.LENGTH_SHORT).show()
-                e.printStackTrace()
                 finish()
             }
         }
@@ -161,7 +178,6 @@ class ShowPasswordActivity : AppCompatActivity() {
 
     override fun onSupportNavigateUp(): Boolean {
         setResult(RESULT_OK)
-        //onBackPressed()
         finish()
         return true
     }

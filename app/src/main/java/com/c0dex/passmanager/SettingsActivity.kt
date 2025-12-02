@@ -75,7 +75,7 @@ class SettingsActivity : AppCompatActivity() {
         val dialogView = layoutInflater.inflate(R.layout.dialog_delete_all, null)
         val checkBox = dialogView.findViewById<CheckBox>(R.id.confirmCheckBox)
 
-        AlertDialog.Builder(this)
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
             .setTitle("Удалить все пароли")
             .setMessage("Вы действительно хотите удалить все сохранённые пароли? Это действие нельзя отменить.")
             .setView(dialogView)

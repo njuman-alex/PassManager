@@ -30,14 +30,11 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:shadowColor="#000000"
-            android:shadowDx="1"
-            android:shadowDy="1"
-            android:shadowRadius="2"
             android:text="Александр Бородинов (c0dex)"
             android:textSize="20sp"
             android:textStyle="bold"
-            android:layout_marginBottom="16dp"/>
+            android:textColor="?attr/colorOnSurface"
+            android:layout_marginBottom="16dp" />
 
         <!-- Карточка с генератором -->
         <com.google.android.material.card.MaterialCardView
@@ -48,7 +45,7 @@
             app:cardElevation="4dp"
             app:cardCornerRadius="8dp"
             app:cardBackgroundColor="?attr/colorSurface"
-            app:strokeColor="?attr/colorOnSurface"
+            app:strokeColor="?attr/colorOutline"
             app:strokeWidth="1dp">
 
             <LinearLayout
@@ -66,14 +63,20 @@
                     android:gravity="center"
                     android:layout_marginBottom="16dp" />
 
+                <!-- Поле отображения пароля -->
                 <TextView
                     android:id="@+id/generatedPasswordText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:hint="Сгенерированный пароль"
-                    android:background="@android:drawable/edit_text"
                     android:padding="12dp"
-                    android:layout_marginBottom="16dp" />
+                    android:layout_marginBottom="16dp"
+                    android:textColor="?attr/colorOnSurface"
+                    android:elevation="1dp"
+                    android:textIsSelectable="true"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/colorSurfaceContainer" />
 
                 <CheckBox
                     android:id="@+id/useLettersCheckBox"
@@ -101,8 +104,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Количество символов в пароле"
-                    android:gravity=""
-                    android:layout_marginTop="8dp" />
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="8dp" />
 
                 <EditText
                     android:id="@+id/passwordLengthEditText"
@@ -111,49 +114,45 @@
                     android:hint="Длина пароля"
                     android:inputType="number"
                     android:text="8"
-                    android:layout_marginBottom="16dp"
-                    android:minHeight="48dp" />
+                    android:importantForAutofill="no"
+                    android:layout_marginBottom="16dp" />
 
                 <Button
                     android:id="@+id/generateButton"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Генерировать"
-                    android:layout_marginBottom="8dp"
-                    android:minHeight="48dp" />
+                    android:layout_marginBottom="8dp" />
 
                 <Button
                     android:id="@+id/copyButton"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Скопировать в буфер"
-                    android:layout_marginBottom="8dp"
                     android:enabled="false"
-                    android:minHeight="48dp" />
+                    android:layout_marginBottom="8dp" />
 
                 <Button
                     android:id="@+id/saveButton"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp"
                     android:text="Сохранить пароль"
-                    android:minHeight="48dp" />
+                    android:layout_marginBottom="8dp" />
 
                 <TextView
                     android:id="@+id/masterPasswordStatusText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Мастер-пароль не задан. Сохранение недоступно!"
-                    android:textColor="@android:color/holo_red_dark"
+                    android:textColor="?attr/colorError"
                     android:gravity="center"
                     android:layout_marginTop="8dp"
                     android:visibility="gone" />
 
-
             </LinearLayout>
 
-
         </com.google.android.material.card.MaterialCardView>
+
         <TextView
             android:id="@+id/versionText"
             android:layout_width="match_parent"

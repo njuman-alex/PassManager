@@ -31,7 +31,7 @@
             app:cardElevation="4dp"
             app:cardCornerRadius="8dp"
             app:cardBackgroundColor="?attr/colorSurface"
-            app:strokeColor="?attr/colorOnSurface"
+            app:strokeColor="?attr/colorOutline"
             app:strokeWidth="1dp">
 
             <LinearLayout
@@ -62,12 +62,16 @@
 
                 </LinearLayout>
 
+                <!-- Кнопка удаления — выделена как опасное действие -->
                 <Button
                     android:id="@+id/deleteAllButton"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Удалить все пароли"
-                    android:backgroundTint="@android:color/holo_red_dark" />
+                    android:textColor="?attr/colorError"
+                    app:strokeColor="?attr/colorError"
+                    android:layout_marginBottom="16dp" />
 
             </LinearLayout>
 

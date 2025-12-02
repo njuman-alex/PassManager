@@ -9,6 +9,7 @@
         android:id="@+id/confirmCheckBox"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Я подтверждаю удаление всех паролей" />
+        android:text="Я подтверждаю удаление всех паролей"
+        android:textColor="?attr/colorOnSurface" />
 
 </LinearLayout>
