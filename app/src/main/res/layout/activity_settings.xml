@@ -36,23 +36,31 @@
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:orientation="vertical"
                 android:padding="16dp">
 
-                <Button
-                    android:id="@+id/exportButton"
+                <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Экспорт базы паролей"
-                    android:layout_marginBottom="16dp" />
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
 
-                <Button
-                    android:id="@+id/importButton"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Импорт базы паролей"
-                    android:layout_marginBottom="160dp" />
+                    <Button
+                        android:id="@+id/exportButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Экспорт базы паролей"
+                        android:layout_marginBottom="16dp" />
+
+                    <Button
+                        android:id="@+id/importButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Импорт базы паролей"
+                        android:layout_marginBottom="16dp" />
+
+                </LinearLayout>
 
                 <Button
                     android:id="@+id/deleteAllButton"
