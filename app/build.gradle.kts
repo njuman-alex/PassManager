@@ -45,6 +45,16 @@ android {
     buildFeatures {
         compose = true
     }
+    applicationVariants.all {
+        outputs.all {
+            // Проверяем, что это OutputConfigurationImpl (или аналогичный тип)
+            // и меняем имя только у APK, если их несколько типов
+            if (this is com.android.build.gradle.internal.api.ApkVariantOutputImpl) {
+                // Пример: MyApp_v1.0_release.apk
+                outputFileName = "PassManager_v${versionName}_${buildType.name}.apk"
+            }
+        }
+    }
 }
 
 dependencies {
