@@ -99,6 +99,9 @@ class MainActivity : AppCompatActivity() {
                 R.id.nav_settings -> {
                     startActivity(Intent(this, SettingsActivity::class.java))
                 }
+                R.id.nav_about -> {
+                    startActivity(Intent(this, AboutActivity::class.java))
+                }
             }
             drawerLayout.closeDrawers()
             true
