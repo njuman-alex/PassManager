@@ -83,8 +83,8 @@ class MasterPasswordActivity : AppCompatActivity() {
         resetButton.setOnClickListener {
             com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
                 .setTitle("Сброс мастер-пароля")
-                .setMessage("Вы действительно хотите сбросить мастер-пароль? " +
-                        "Функция сохранения будет недоступна! " +
+                .setMessage("Вы действительно хотите сбросить мастер-пароль?\n" +
+                        "Функции сохранения и экспорта будут недоступны!\n" +
                         "Для просмотра сохранённых паролей вам всё равно придётся ввести прежний мастер-пароль!")
                 .setPositiveButton("Да") { _, _ ->
 //                    val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
