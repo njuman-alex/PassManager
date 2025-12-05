@@ -87,6 +87,35 @@ class MasterPasswordActivity : AppCompatActivity() {
                         "Функция сохранения будет недоступна! " +
                         "Для просмотра сохранённых паролей вам всё равно придётся ввести прежний мастер-пароль!")
                 .setPositiveButton("Да") { _, _ ->
+//                    val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+//                    prefs.edit()
+//                        .remove(MASTER_PASSWORD_SET_KEY)
+//                        .remove(MASTER_PASSWORD_KEY)
+//                        .apply()
+//
+//                    Toast.makeText(this, "Мастер-пароль сброшен!", Toast.LENGTH_SHORT).show()
+//                    checkMasterPasswordStatus()
+//
+//                    passwordEditText.isEnabled = true
+//                    confirmPasswordEditText.isEnabled = true
+//                    setButton.isEnabled = true
+//                    setResult(RESULT_OK)
+//                    finish()
+                    requestMasterPasswordForDeletion()
+                }
+                .setNegativeButton("Нет", null)
+                .show()
+        }
+    }
+    private fun requestMasterPasswordForDeletion() {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_master_password, null)
+        val input = dialogView.findViewById<EditText>(R.id.masterPasswordEditText)
+
+        AlertDialog.Builder(this)
+            .setTitle("Введите мастер-пароль")
+            .setView(dialogView)
+            .setPositiveButton("ОК") { _, _ ->
+                if (input.text.toString() == getMasterPassword()) {
                     val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
                     prefs.edit()
                         .remove(MASTER_PASSWORD_SET_KEY)
@@ -102,17 +131,23 @@ class MasterPasswordActivity : AppCompatActivity() {
                     setResult(RESULT_OK)
                     finish()
                 }
-                .setNegativeButton("Нет", null)
-                .show()
-        }
+                else Toast.makeText(this, "Неверный мастер-пароль", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("Отмена", null)
+            .show()
     }
-
     private fun setMasterPassword(password: String) {
         val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         prefs.edit()
             .putBoolean(MASTER_PASSWORD_SET_KEY, true)
             .putString(MASTER_PASSWORD_KEY, password)
             .apply()
+    }
+
+    private fun getMasterPassword(): String {
+        val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+        val masterPassword = prefs.getString(MASTER_PASSWORD_KEY, "") ?: ""
+        return masterPassword
     }
 
     override fun onSupportNavigateUp(): Boolean {
