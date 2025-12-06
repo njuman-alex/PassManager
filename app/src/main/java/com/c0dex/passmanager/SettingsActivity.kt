@@ -19,7 +19,6 @@ import com.c0dex.passmanager.data.PasswordDatabase
 import com.c0dex.passmanager.data.PasswordItem
 import com.google.gson.Gson
 import kotlinx.coroutines.launch
-import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -141,7 +140,7 @@ class SettingsActivity : AppCompatActivity() {
                     resolver.openOutputStream(uri).use { outputStream ->
                         outputStream?.write(encryptedJson.toByteArray())
                     }
-                    Toast.makeText(this@SettingsActivity, "Пароли экспортированы", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@SettingsActivity, "Пароли экспортированы в папку \"Загрузки\" как \"$fileName\"", Toast.LENGTH_LONG).show()
                 } else {
                     Toast.makeText(this@SettingsActivity, "Ошибка экспорта", Toast.LENGTH_SHORT).show()
                 }
@@ -240,7 +239,8 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     override fun onSupportNavigateUp(): Boolean {
-        onBackPressed()
+        //onBackPressed()
+        finish()
         return true
     }
 }
