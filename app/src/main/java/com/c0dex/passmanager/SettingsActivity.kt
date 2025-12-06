@@ -1,6 +1,7 @@
 package com.c0dex.passmanager
 
 import android.content.ContentValues
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -71,20 +72,37 @@ class SettingsActivity : AppCompatActivity() {
     private fun showDeleteAllAlert() {
         val dialogView = layoutInflater.inflate(R.layout.dialog_delete_all, null)
         val checkBox = dialogView.findViewById<CheckBox>(R.id.confirmCheckBox)
+        lifecycleScope.launch {
+            try{
+                val db = PasswordDatabase.getDatabase(this@SettingsActivity)
+                val passwords = db.passwordDao().getAllPasswords()
 
-        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
-            .setTitle("Удалить все пароли")
-            .setMessage("Вы действительно хотите удалить все сохранённые пароли? Это действие нельзя отменить.")
-            .setView(dialogView)
-            .setPositiveButton("Удалить") { _, _ ->
-                if (checkBox.isChecked) {
-                    deleteAllPasswords()
-                } else {
-                    Toast.makeText(this, "Подтвердите удаление", Toast.LENGTH_SHORT).show()
+                if (passwords.isEmpty()) {
+                    Toast.makeText(this@SettingsActivity, "Нечего удалять", Toast.LENGTH_SHORT).show()
+                    return@launch
                 }
+                else {
+                    com.google.android.material.dialog.MaterialAlertDialogBuilder(this@SettingsActivity)
+                        .setTitle("Удалить все пароли")
+                        .setMessage("Вы действительно хотите удалить все сохранённые пароли? Это действие нельзя отменить.")
+                        .setView(dialogView)
+                        .setPositiveButton("Удалить") { _, _ ->
+                            if (checkBox.isChecked) {
+                                deleteAllPasswords()
+                            } else {
+                                Toast.makeText(this@SettingsActivity, "Подтвердите удаление", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                        .setNegativeButton("Отмена", null)
+                        .show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(this@SettingsActivity, "Ошибка удаления", Toast.LENGTH_SHORT).show()
+                e.printStackTrace()
             }
-            .setNegativeButton("Отмена", null)
-            .show()
+        }
+
+
     }
 
     private fun deleteAllPasswords() {
