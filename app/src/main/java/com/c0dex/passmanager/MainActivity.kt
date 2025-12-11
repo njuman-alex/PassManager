@@ -175,6 +175,11 @@ class MainActivity : AppCompatActivity() {
         val useDigits = useDigitsCheckBox.isChecked
         val useSpecial = useSpecialCheckBox.isChecked
 
+        if (length.toString().toInt() > 16 || (length.toString().toInt() < 6)) {
+            Toast.makeText(this, "Некорректная длина пароля (6 - 16 символов)", Toast.LENGTH_SHORT).show()
+            return
+        }
+
         val password = generatePasswordString(length, useLetters, useDigits, useSpecial)
         generatedPasswordText.text = password
 
