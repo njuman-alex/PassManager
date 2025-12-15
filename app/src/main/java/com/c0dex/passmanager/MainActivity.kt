@@ -192,6 +192,13 @@ class MainActivity : AppCompatActivity() {
         val password = generatePasswordString(length, useLettersCheckBox.isChecked, useDigitsCheckBox.isChecked, useSpecialCheckBox.isChecked)
         generatedPasswordText.text = password
 
+        // Сбрасываем режим редактирования, если он активен
+        if (editablePasswordText.visibility == View.VISIBLE) {
+            editablePasswordText.visibility = View.GONE
+            generatedPasswordText.visibility = View.VISIBLE
+            editPasswordButton.text = "✎" // Возвращаем карандаш
+        }
+
         // Сбрасываем видимость (на случай, если был gone)
         generatedPasswordText.alpha = 0f
         generatedPasswordText.visibility = View.VISIBLE
