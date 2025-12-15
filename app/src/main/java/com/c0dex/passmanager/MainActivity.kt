@@ -164,8 +164,8 @@ class MainActivity : AppCompatActivity() {
         val prefs = getSharedPreferences("password_prefs", MODE_PRIVATE)
         val hasMasterPassword = prefs.getBoolean("master_password_set", false)
 
-        // Определяем, есть ли текст для проверки (из любого из полей)
-        val hasPassword = generatedPasswordText.text.isNotEmpty() ||
+        // Проверяем, есть ли доступный пароль для работы
+        val isPasswordAvailable = generatedPasswordText.text.isNotEmpty() ||
                 (editablePasswordText.visibility == View.VISIBLE && editablePasswordText.text.isNotEmpty())
 
         if (!hasMasterPassword) {
@@ -173,37 +173,33 @@ class MainActivity : AppCompatActivity() {
             saveButton.isEnabled = false
         } else {
             masterPasswordStatusText.visibility = View.GONE
-            saveButton.isEnabled = hasPassword
+            saveButton.isEnabled = isPasswordAvailable
         }
 
-        copyButton.isEnabled = hasPassword
-        editPasswordButton.isEnabled = generatedPasswordText.text.isNotEmpty() ||
-                editablePasswordText.visibility == View.VISIBLE
+        copyButton.isEnabled = isPasswordAvailable
+        editPasswordButton.isEnabled = generatedPasswordText.text.isNotEmpty()
     }
 
     private fun generatePassword() {
         val length = passwordLengthEditText.text.toString().toIntOrNull() ?: 8
-        val useLetters = useLettersCheckBox.isChecked
-        val useDigits = useDigitsCheckBox.isChecked
-        val useSpecial = useSpecialCheckBox.isChecked
 
-        if (length.toString().toInt() > 16 || (length.toString().toInt() < 6)) {
+        // Проверка длины в одном месте
+        if (length !in 6..16) {
             Toast.makeText(this, "Некорректная длина пароля (6 - 16 символов)", Toast.LENGTH_SHORT).show()
             return
         }
 
-        val password = generatePasswordString(length, useLetters, useDigits, useSpecial)
+        val password = generatePasswordString(length, useLettersCheckBox.isChecked, useDigitsCheckBox.isChecked, useSpecialCheckBox.isChecked)
         generatedPasswordText.text = password
 
         // Сбрасываем видимость (на случай, если был gone)
         generatedPasswordText.alpha = 0f
         generatedPasswordText.visibility = View.VISIBLE
 
-// Анимация появления
+        // Анимация появления
         generatedPasswordText.animate()
             .alpha(1f)
             .setDuration(200)
-            .setListener(null) // убираем лишний listener
             .start()
 
         // Обновляем статус кнопки
@@ -218,25 +214,18 @@ class MainActivity : AppCompatActivity() {
     ): String {
         if (length <= 0) return ""
 
-        var chars = "abcdefghijkmnpqrstuvwxyz"
-        if (useLetters) {
-            chars += "ABCDEFGHJKMNPQRSTUVWXYZ"
-        }
-        if (useDigits) {
-            chars += "23456789"
-        }
-        if (useSpecial) {
-            chars += "!@#$%^&*()_+-=[]{}|;:,.<>?"
+        val chars = buildString {
+            append("abcdefghijkmnpqrstuvwxyz") // исключаем похожие символы
+            if (useLetters) append("ABCDEFGHJKMNPQRSTUVWXYZ")
+            if (useDigits) append("23456789")
+            if (useSpecial) append("!@#$%^&*()_+-=[]{}|;:,.<>?")
         }
 
         if (chars.isEmpty()) return ""
 
-        return buildString {
-            repeat(length) {
-                append(chars.random())
-            }
-        }
+        return (1..length).map { chars.random() }.joinToString("")
     }
+
 
     private fun togglePasswordEdit() {
         if (generatedPasswordText.visibility == View.VISIBLE) {
