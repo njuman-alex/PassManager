@@ -8,11 +8,13 @@ import android.view.View
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
+import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.drawerlayout.widget.DrawerLayout
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.navigation.NavigationView
 
 class MainActivity : AppCompatActivity() {
@@ -29,6 +31,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var navigationView: NavigationView
     private lateinit var masterPasswordStatusText: TextView
     private lateinit var versionText: TextView
+    private lateinit var editPasswordButton: MaterialButton  // Добавь эту строку
+    private lateinit var editablePasswordText: EditText  // Добавь это поле
 
     private val masterPasswordLauncher = registerForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
@@ -75,6 +79,8 @@ class MainActivity : AppCompatActivity() {
         navigationView = findViewById(R.id.navigationView)
         masterPasswordStatusText = findViewById(R.id.masterPasswordStatusText)
         versionText = findViewById(R.id.versionText)
+        editPasswordButton = findViewById(R.id.editPasswordButton) // Добавь эту строку
+        editablePasswordText = findViewById(R.id.editablePasswordText)
     }
 
     private fun setupToolbar() {
@@ -129,6 +135,9 @@ class MainActivity : AppCompatActivity() {
                 e.printStackTrace()
             }
         }
+        editPasswordButton.setOnClickListener {
+            togglePasswordEdit()
+        }
 
 
         saveButton.setOnClickListener {
@@ -156,17 +165,21 @@ class MainActivity : AppCompatActivity() {
         val prefs = getSharedPreferences("password_prefs", MODE_PRIVATE)
         val hasMasterPassword = prefs.getBoolean("master_password_set", false)
 
-        // Статус мастер-пароля
+        // Определяем, есть ли текст для проверки (из любого из полей)
+        val hasPassword = generatedPasswordText.text.isNotEmpty() ||
+                (editablePasswordText.visibility == View.VISIBLE && editablePasswordText.text.isNotEmpty())
+
         if (!hasMasterPassword) {
             masterPasswordStatusText.visibility = View.VISIBLE
             saveButton.isEnabled = false
         } else {
             masterPasswordStatusText.visibility = View.GONE
-            saveButton.isEnabled = generatedPasswordText.text.isNotEmpty()
+            saveButton.isEnabled = hasPassword
         }
 
-        // Кнопка "Копировать" доступна, если есть сгенерированный пароль — независимо от мастер-пароля
-        copyButton.isEnabled = generatedPasswordText.text.isNotEmpty()
+        copyButton.isEnabled = hasPassword
+        editPasswordButton.isEnabled = generatedPasswordText.text.isNotEmpty() ||
+                editablePasswordText.visibility == View.VISIBLE
     }
 
     private fun generatePassword() {
@@ -223,6 +236,25 @@ class MainActivity : AppCompatActivity() {
             repeat(length) {
                 append(chars.random())
             }
+        }
+    }
+
+    private fun togglePasswordEdit() {
+        if (generatedPasswordText.visibility == View.VISIBLE) {
+            // Переключаемся в режим редактирования
+            val currentText = generatedPasswordText.text.toString()
+            editablePasswordText.setText(currentText)
+            editablePasswordText.visibility = View.VISIBLE
+            generatedPasswordText.visibility = View.GONE
+            editPasswordButton.text = "✓" // Галочка
+        } else {
+            // Сохраняем изменения и возвращаемся к отображению
+            val editedText = editablePasswordText.text.toString()
+            generatedPasswordText.text = editedText
+            editablePasswordText.visibility = View.GONE
+            generatedPasswordText.visibility = View.VISIBLE
+            editPasswordButton.text = "✎" // Карандаш
+            checkMasterPasswordStatus()
         }
     }
 
