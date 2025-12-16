@@ -68,7 +68,7 @@ class PasswordListActivity : AppCompatActivity() {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
             override fun afterTextChanged(s: android.text.Editable?) {
-                adapter.filter(s.toString())
+                adapter.filter(s?.toString() ?: "")
             }
         })
     }
