@@ -2,6 +2,7 @@ package com.c0dex.passmanager
 
 import android.content.Intent
 import android.os.Bundle
+import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -17,6 +18,8 @@ class PasswordListActivity : AppCompatActivity() {
     private lateinit var adapter: PasswordListAdapter
     private lateinit var toolbar: Toolbar
     private lateinit var emptyMessageText: TextView
+
+    private lateinit var searchEditText: EditText
 
     private val showPasswordLauncher = registerForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
@@ -41,6 +44,7 @@ class PasswordListActivity : AppCompatActivity() {
         recyclerView = findViewById(R.id.recyclerView)
         toolbar = findViewById(R.id.toolbar)
         emptyMessageText = findViewById(R.id.emptyMessageText)
+        searchEditText = findViewById(R.id.searchEditText)
     }
 
     private fun setupToolbar() {
@@ -59,6 +63,14 @@ class PasswordListActivity : AppCompatActivity() {
         }
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = adapter
+
+        searchEditText.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: android.text.Editable?) {
+                adapter.filter(s.toString())
+            }
+        })
     }
 
     private fun loadPasswords() {

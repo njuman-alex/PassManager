@@ -5,29 +5,49 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.ListAdapter
+import androidx.recyclerview.widget.DiffUtil
 import com.c0dex.passmanager.data.PasswordItem
 
 class PasswordListAdapter(
-    private var passwords: List<PasswordItem> = emptyList(),
     private val onItemClick: (PasswordItem) -> Unit
 ) : RecyclerView.Adapter<PasswordListAdapter.ViewHolder>() {
 
+    // Оригинальный список (все пароли)
+    private var originalList: List<PasswordItem> = emptyList()
+    // Отфильтрованный список
+    private var filteredList: List<PasswordItem> = emptyList()
+
+    /**
+     * Обновляет полный список паролей (вызывается из Activity)
+     */
     fun updatePasswords(newPasswords: List<PasswordItem>) {
-        passwords = newPasswords
+        originalList = newPasswords
+        filteredList = newPasswords
         notifyDataSetChanged()
     }
 
-
+    /**
+     * Фильтрует список по поисковому запросу
+     */
+    fun filter(query: String) {
+        val normalizedQuery = query.trim().lowercase()
+        filteredList = if (normalizedQuery.isEmpty()) {
+            originalList
+        } else {
+            originalList.filter { item ->
+                item.description.lowercase().contains(normalizedQuery)
+            }
+        }
+        notifyDataSetChanged()
+    }
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val descriptionText: TextView = itemView.findViewById(R.id.descriptionText)
 
         fun bind(item: PasswordItem) {
             descriptionText.text = item.description
-
-            itemView.setOnClickListener {
-                onItemClick(item)
-            }
+            itemView.setOnClickListener { onItemClick(item) }
         }
     }
 
@@ -38,8 +58,8 @@ class PasswordListAdapter(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bind(passwords[position])
+        holder.bind(filteredList[position])
     }
 
-    override fun getItemCount() = passwords.size
+    override fun getItemCount(): Int = filteredList.size
 }
