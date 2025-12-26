@@ -2,6 +2,9 @@ package com.c0dex.passmanager
 
 import android.content.Intent
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
+import android.view.View
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
@@ -18,14 +21,13 @@ class PasswordListActivity : AppCompatActivity() {
     private lateinit var adapter: PasswordListAdapter
     private lateinit var toolbar: Toolbar
     private lateinit var emptyMessageText: TextView
-
     private lateinit var searchEditText: EditText
+    private lateinit var countText: TextView
 
     private val showPasswordLauncher = registerForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == RESULT_OK) {
-            // При возврате из ShowPasswordActivity
             loadPasswords()
         }
     }
@@ -33,7 +35,6 @@ class PasswordListActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_password_list)
-
         initViews()
         setupToolbar()
         setupRecyclerView()
@@ -45,11 +46,11 @@ class PasswordListActivity : AppCompatActivity() {
         toolbar = findViewById(R.id.toolbar)
         emptyMessageText = findViewById(R.id.emptyMessageText)
         searchEditText = findViewById(R.id.searchEditText)
+        countText = findViewById(R.id.countText)
     }
 
     private fun setupToolbar() {
         setSupportActionBar(toolbar)
-
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.setDisplayShowHomeEnabled(true)
     }
@@ -58,19 +59,31 @@ class PasswordListActivity : AppCompatActivity() {
         adapter = PasswordListAdapter { item ->
             val intent = Intent(this, ShowPasswordActivity::class.java)
             intent.putExtra("PASSWORD_ID", item.id)
-            intent.putExtra("ENCRYPTED_PASSWORD", item.encryptedPassword) // Передаём зашифрованный пароль
+            intent.putExtra("ENCRYPTED_PASSWORD", item.encryptedPassword)
             showPasswordLauncher.launch(intent)
         }
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = adapter
 
-        searchEditText.addTextChangedListener(object : android.text.TextWatcher {
+        // 👇 ИСПРАВЛЕНО: используем геттеры вместо прямого доступа к спискам
+        searchEditText.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: android.text.Editable?) {
+            override fun afterTextChanged(s: Editable?) {
                 adapter.filter(s?.toString() ?: "")
+                updateCountText() // 👈 вынесено в отдельный метод для чистоты
             }
         })
+    }
+
+    // 👇 ДОБАВЛЕНО: отдельный метод для обновления счётчика
+    private fun updateCountText() {
+        val isSearchEmpty = searchEditText.text.isNullOrEmpty()
+        countText.text = if (isSearchEmpty) {
+            "Всего паролей: ${adapter.originalCount}" // 👈 геттер
+        } else {
+            "Найдено: ${adapter.filteredCount}" // 👈 геттер
+        }
     }
 
     private fun loadPasswords() {
@@ -81,11 +94,15 @@ class PasswordListActivity : AppCompatActivity() {
 
                 runOnUiThread {
                     if (passwords.isEmpty()) {
-                        recyclerView.visibility = android.view.View.GONE
-                        emptyMessageText.visibility = android.view.View.VISIBLE
+                        recyclerView.visibility = View.GONE
+                        emptyMessageText.visibility = View.VISIBLE
+                        countText.visibility = View.GONE
                     } else {
-                        recyclerView.visibility = android.view.View.VISIBLE
-                        emptyMessageText.visibility = android.view.View.GONE
+                        recyclerView.visibility = View.VISIBLE
+                        emptyMessageText.visibility = View.GONE
+                        countText.visibility = View.VISIBLE
+                        // 👇 ИСПРАВЛЕНО: используем passwords.size напрямую (адаптер ещё не обновлён!)
+                        countText.text = "Всего паролей: ${passwords.size}"
                     }
                     adapter.updatePasswords(passwords)
                 }
@@ -100,7 +117,6 @@ class PasswordListActivity : AppCompatActivity() {
 
     override fun onSupportNavigateUp(): Boolean {
         setResult(RESULT_OK)
-        //onBackPressed()
         finish()
         return true
     }

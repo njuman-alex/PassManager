@@ -5,8 +5,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.ListAdapter
-import androidx.recyclerview.widget.DiffUtil
 import com.c0dex.passmanager.data.PasswordItem
 
 class PasswordListAdapter(
@@ -17,6 +15,13 @@ class PasswordListAdapter(
     private var originalList: List<PasswordItem> = emptyList()
     // Отфильтрованный список
     private var filteredList: List<PasswordItem> = emptyList()
+
+    // 👇 ДОБАВЛЕНО: безопасные геттеры (каноничный способ в Kotlin)
+    val originalCount: Int
+        get() = originalList.size
+
+    val filteredCount: Int
+        get() = filteredList.size
 
     /**
      * Обновляет полный список паролей (вызывается из Activity)
