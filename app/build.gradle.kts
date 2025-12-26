@@ -20,8 +20,8 @@ android {
         applicationId = "com.c0dex.passmanager"
         minSdk = 24
         targetSdk = 36
-        versionCode = 12
-        versionName = "12.1"
+        versionCode = 13
+        versionName = "13.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
