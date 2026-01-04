@@ -30,14 +30,18 @@ class MainActivity : AppCompatActivity() {
     private lateinit var navigationView: NavigationView
     private lateinit var masterPasswordStatusText: TextView
     private lateinit var versionText: TextView
-    private lateinit var editPasswordButton: MaterialButton  // Добавь эту строку
-    private lateinit var editablePasswordText: EditText  // Добавь это поле
+    private lateinit var editPasswordButton: MaterialButton
+    private lateinit var editablePasswordText: EditText
+
+    // 👇 ДОБАВЛЕНО: храним текущее состояние пароля и режима редактирования
+    private var currentPassword: String = ""
+    private var isEditMode: Boolean = false
 
     private val masterPasswordLauncher = registerForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == RESULT_OK) {
-            checkMasterPasswordStatus() // Обновляем статус
+            checkMasterPasswordStatus()
         }
     }
 
@@ -45,9 +49,8 @@ class MainActivity : AppCompatActivity() {
         androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == RESULT_OK) {
-            // Очищаем поле пароля
             generatedPasswordText.text = ""
-            // Обновляем статус
+            currentPassword = "" // 👈 сброс при сохранении
             checkMasterPasswordStatus()
         }
     }
@@ -60,8 +63,40 @@ class MainActivity : AppCompatActivity() {
         setupToolbar()
         setupDrawer()
         setupClickListeners()
-        checkMasterPasswordStatus() // Проверяем при запуске
         setVersion()
+
+        // 👇 ВОССТАНАВЛИВАЕМ состояние после поворота
+        if (savedInstanceState != null) {
+            currentPassword = savedInstanceState.getString("current_password", "")
+            isEditMode = savedInstanceState.getBoolean("is_edit_mode", false)
+
+            if (isEditMode) {
+                editablePasswordText.setText(currentPassword)
+                editablePasswordText.visibility = View.VISIBLE
+                generatedPasswordText.visibility = View.GONE
+                editPasswordButton.text = "✓"
+            } else {
+                generatedPasswordText.text = currentPassword
+                generatedPasswordText.visibility = if (currentPassword.isNotEmpty()) View.VISIBLE else View.GONE
+                editablePasswordText.visibility = View.GONE
+                editPasswordButton.text = "✎"
+            }
+        }
+
+        checkMasterPasswordStatus()
+    }
+
+    // 👇 ДОБАВЛЕНО: сохраняем состояние перед уничтожением
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        // Сохраняем текущий пароль (из нужного поля)
+        currentPassword = if (isEditMode) {
+            editablePasswordText.text.toString()
+        } else {
+            generatedPasswordText.text.toString()
+        }
+        outState.putString("current_password", currentPassword)
+        outState.putBoolean("is_edit_mode", isEditMode)
     }
 
     private fun initViews() {
@@ -74,17 +109,17 @@ class MainActivity : AppCompatActivity() {
         copyButton = findViewById(R.id.copyButton)
         saveButton = findViewById(R.id.saveButton)
         toolbar = findViewById(R.id.toolbar)
+        toolbar = findViewById(R.id.toolbar)
         drawerLayout = findViewById(R.id.drawerLayout)
         navigationView = findViewById(R.id.navigationView)
         masterPasswordStatusText = findViewById(R.id.masterPasswordStatusText)
         versionText = findViewById(R.id.versionText)
-        editPasswordButton = findViewById(R.id.editPasswordButton) // Добавь эту строку
+        editPasswordButton = findViewById(R.id.editPasswordButton)
         editablePasswordText = findViewById(R.id.editablePasswordText)
     }
 
     private fun setupToolbar() {
         setSupportActionBar(toolbar)
-
         supportActionBar?.apply {
             setDisplayHomeAsUpEnabled(true)
             setHomeAsUpIndicator(R.drawable.ic_menu)
@@ -98,7 +133,6 @@ class MainActivity : AppCompatActivity() {
                     startActivity(Intent(this, PasswordListActivity::class.java))
                 }
                 R.id.nav_master_password -> {
-                    // Используем launcher
                     masterPasswordLauncher.launch(Intent(this, MasterPasswordActivity::class.java))
                 }
                 R.id.nav_settings -> {
@@ -134,14 +168,13 @@ class MainActivity : AppCompatActivity() {
                 e.printStackTrace()
             }
         }
+
         editPasswordButton.setOnClickListener {
             togglePasswordEdit()
         }
 
-
         saveButton.setOnClickListener {
             val password = generatedPasswordText.text.toString()
-
             if (password.isNotEmpty()) {
                 val intent = Intent(this, SavePasswordActivity::class.java)
                 intent.putExtra("GENERATED_PASSWORD", password)
@@ -164,7 +197,6 @@ class MainActivity : AppCompatActivity() {
         val prefs = getSharedPreferences("password_prefs", MODE_PRIVATE)
         val hasMasterPassword = prefs.getBoolean("master_password_set", false)
 
-        // Проверяем, есть ли доступный пароль для работы
         val isPasswordAvailable = generatedPasswordText.text.isNotEmpty() ||
                 (editablePasswordText.visibility == View.VISIBLE && editablePasswordText.text.isNotEmpty())
 
@@ -182,8 +214,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun generatePassword() {
         val length = passwordLengthEditText.text.toString().toIntOrNull() ?: 8
-
-        // Проверка длины в одном месте
         if (length !in 6..16) {
             Toast.makeText(this, "Некорректная длина пароля (6 - 16 символов)", Toast.LENGTH_SHORT).show()
             return
@@ -191,25 +221,24 @@ class MainActivity : AppCompatActivity() {
 
         val password = generatePasswordString(length, useLettersCheckBox.isChecked, useDigitsCheckBox.isChecked, useSpecialCheckBox.isChecked)
         generatedPasswordText.text = password
+        currentPassword = password // 👈 обновляем текущий пароль
 
-        // Сбрасываем режим редактирования, если он активен
+        // Выходим из режима редактирования
         if (editablePasswordText.visibility == View.VISIBLE) {
             editablePasswordText.visibility = View.GONE
             generatedPasswordText.visibility = View.VISIBLE
-            editPasswordButton.text = "✎" // Возвращаем карандаш
+            editPasswordButton.text = "✎"
+            isEditMode = false // 👈 сбрасываем флаг
         }
 
-        // Сбрасываем видимость (на случай, если был gone)
+        // Анимация появления
         generatedPasswordText.alpha = 0f
         generatedPasswordText.visibility = View.VISIBLE
-
-        // Анимация появления
         generatedPasswordText.animate()
             .alpha(1f)
             .setDuration(200)
             .start()
 
-        // Обновляем статус кнопки
         checkMasterPasswordStatus()
     }
 
@@ -222,33 +251,31 @@ class MainActivity : AppCompatActivity() {
         if (length <= 0) return ""
 
         val chars = buildString {
-            append("abcdefghijkmnpqrstuvwxyz") // исключаем похожие символы
+            append("abcdefghijkmnpqrstuvwxyz")
             if (useLetters) append("ABCDEFGHJKMNPQRSTUVWXYZ")
             if (useDigits) append("23456789")
             if (useSpecial) append("!@#$%^&*()_+-=[]{}|;:,.<>?")
         }
 
-        if (chars.isEmpty()) return ""
-
         return (1..length).map { chars.random() }.joinToString("")
     }
 
-
     private fun togglePasswordEdit() {
-        if (generatedPasswordText.visibility == View.VISIBLE) {
-            // Переключаемся в режим редактирования
+        isEditMode = !isEditMode // 👈 переключаем флаг
+
+        if (isEditMode) {
             val currentText = generatedPasswordText.text.toString()
             editablePasswordText.setText(currentText)
             editablePasswordText.visibility = View.VISIBLE
             generatedPasswordText.visibility = View.GONE
-            editPasswordButton.text = "✓" // Галочка
+            editPasswordButton.text = "✓"
         } else {
-            // Сохраняем изменения и возвращаемся к отображению
             val editedText = editablePasswordText.text.toString()
             generatedPasswordText.text = editedText
+            currentPassword = editedText // 👈 сохраняем отредактированный пароль
             editablePasswordText.visibility = View.GONE
             generatedPasswordText.visibility = View.VISIBLE
-            editPasswordButton.text = "✎" // Карандаш
+            editPasswordButton.text = "✎"
             checkMasterPasswordStatus()
         }
     }
