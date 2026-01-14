@@ -15,6 +15,7 @@ import androidx.appcompat.widget.Toolbar
 import androidx.drawerlayout.widget.DrawerLayout
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.navigation.NavigationView
+import androidx.core.view.isVisible
 
 class MainActivity : AppCompatActivity() {
     private lateinit var generatedPasswordText: TextView
@@ -198,7 +199,7 @@ class MainActivity : AppCompatActivity() {
         val hasMasterPassword = prefs.getBoolean("master_password_set", false)
 
         val isPasswordAvailable = generatedPasswordText.text.isNotEmpty() ||
-                (editablePasswordText.visibility == View.VISIBLE && editablePasswordText.text.isNotEmpty())
+                (editablePasswordText.isVisible && editablePasswordText.text.isNotEmpty())
 
         if (!hasMasterPassword) {
             masterPasswordStatusText.visibility = View.VISIBLE
@@ -224,7 +225,7 @@ class MainActivity : AppCompatActivity() {
         currentPassword = password // 👈 обновляем текущий пароль
 
         // Выходим из режима редактирования
-        if (editablePasswordText.visibility == View.VISIBLE) {
+        if (editablePasswordText.isVisible) {
             editablePasswordText.visibility = View.GONE
             generatedPasswordText.visibility = View.VISIBLE
             editPasswordButton.text = "✎"

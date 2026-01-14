@@ -4,6 +4,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import android.content.Context
+import com.c0dex.passmanager.MasterPasswordItem
 
 @Database(
     entities = [PasswordItem::class, MasterPasswordItem::class],

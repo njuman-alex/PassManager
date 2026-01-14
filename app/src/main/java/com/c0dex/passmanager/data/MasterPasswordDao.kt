@@ -3,6 +3,7 @@ package com.c0dex.passmanager.data
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
+import com.c0dex.passmanager.MasterPasswordItem
 
 @Dao
 interface MasterPasswordDao {

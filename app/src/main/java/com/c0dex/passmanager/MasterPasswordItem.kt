@@ -1,4 +1,4 @@
-package com.c0dex.passmanager.data
+package com.c0dex.passmanager
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
