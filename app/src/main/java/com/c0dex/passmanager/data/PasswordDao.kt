@@ -29,4 +29,7 @@ interface PasswordDao {
 
     @Query("DELETE FROM passwords") // <-- Добавили
     suspend fun deleteAllPasswords()
+
+    @Query("UPDATE passwords SET encryptedPassword = :newEncrypted WHERE id = :id")
+    suspend fun updateEncryptedPassword(id: Long, newEncrypted: String)
 }

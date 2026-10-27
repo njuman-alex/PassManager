@@ -18,7 +18,7 @@ android {
 
     defaultConfig {
         applicationId = "com.c0dex.passmanager"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 36
         versionCode = 13
         versionName = "13.5"
