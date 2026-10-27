@@ -1,5 +1,8 @@
 package com.c0dex.passmanager
 
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
@@ -85,6 +88,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         checkMasterPasswordStatus()
+        runLegacyMigrationIfNeeded()
     }
 
     // 👇 ДОБАВЛЕНО: сохраняем состояние перед уничтожением
@@ -100,6 +104,38 @@ class MainActivity : AppCompatActivity() {
         outState.putBoolean("is_edit_mode", isEditMode)
     }
 
+    private fun runLegacyMigrationIfNeeded() {
+        val prefs = getSharedPreferences("password_prefs", MODE_PRIVATE)
+        val hasMaster = prefs.getBoolean("master_password_set", false)
+        val alreadyMigrated = prefs.getBoolean("db_migrated_v2", false)
+        if (!hasMaster || alreadyMigrated) return
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val master = prefs.getString("master_password", "") ?: ""
+                if (master.isEmpty()) return@launch
+
+                // 1. Страховка ПЕРЕД любыми изменениями
+                val backupFile = PasswordMigrator.backupDatabase(this@MainActivity)
+
+                // 2. Сама миграция v1 -> v2
+                val count = PasswordMigrator.migrateDatabase(this@MainActivity, master)
+
+                // 3. Флаг, чтобы не гонять миграцию каждый запуск
+                prefs.edit().putBoolean("db_migrated_v2", true).apply()
+
+                runOnUiThread {
+                    Toast.makeText(
+                        this@MainActivity,
+                        "База переведена на новый шифр: записей обновлено: $count\nБэкап: ${backupFile.name}",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
     private fun initViews() {
         generatedPasswordText = findViewById(R.id.generatedPasswordText)
         useLettersCheckBox = findViewById(R.id.useLettersCheckBox)
