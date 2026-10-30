@@ -45,4 +45,13 @@ object PasswordMigrator {
         Log.i(TAG, "Migration done: $migrated / ${legacy.size}")
         return migrated
     }
+
+    /** Переносит мастер-пароль из plaintext-префов в EncryptedSharedPreferences. Идемпотентно. */
+    fun migrateMasterPasswordIfNeeded(context: Context) {
+        val oldPrefs = context.getSharedPreferences("password_prefs", Context.MODE_PRIVATE)
+        val plain = oldPrefs.getString("master_password", null) ?: return
+        SecurePrefs.setMaster(context, plain)
+        oldPrefs.edit().remove("master_password").apply()
+        Log.i(TAG, "Master password moved to EncryptedSharedPreferences")
+    }
 }

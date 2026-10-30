@@ -88,7 +88,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         checkMasterPasswordStatus()
-        runLegacyMigrationIfNeeded()
+        runMigrationsIfNeeded()
     }
 
     // 👇 ДОБАВЛЕНО: сохраняем состояние перед уничтожением
@@ -104,26 +104,20 @@ class MainActivity : AppCompatActivity() {
         outState.putBoolean("is_edit_mode", isEditMode)
     }
 
-    private fun runLegacyMigrationIfNeeded() {
-        val prefs = getSharedPreferences("password_prefs", MODE_PRIVATE)
-        val hasMaster = prefs.getBoolean("master_password_set", false)
-        val alreadyMigrated = prefs.getBoolean("db_migrated_v2", false)
-        if (!hasMaster || alreadyMigrated) return
-
+    private fun runMigrationsIfNeeded() {
         lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val master = prefs.getString("master_password", "") ?: ""
-                if (master.isEmpty()) return@launch
+            // 1. Мастер: plaintext -> EncryptedSharedPreferences (каждый запуск, идемпотентно)
+            PasswordMigrator.migrateMasterPasswordIfNeeded(this@MainActivity)
 
-                // 1. Страховка ПЕРЕД любыми изменениями
+            // 2. База: v1 -> v2 (одноразово, по флагу)
+            val prefs = getSharedPreferences("password_prefs", MODE_PRIVATE)
+            val hasMaster = prefs.getBoolean("master_password_set", false)
+            val alreadyMigrated = prefs.getBoolean("db_migrated_v2", false)
+            if (hasMaster && !alreadyMigrated) {
+                val master = SecurePrefs.getMaster(this@MainActivity) ?: return@launch
                 val backupFile = PasswordMigrator.backupDatabase(this@MainActivity)
-
-                // 2. Сама миграция v1 -> v2
                 val count = PasswordMigrator.migrateDatabase(this@MainActivity, master)
-
-                // 3. Флаг, чтобы не гонять миграцию каждый запуск
                 prefs.edit().putBoolean("db_migrated_v2", true).apply()
-
                 runOnUiThread {
                     Toast.makeText(
                         this@MainActivity,
@@ -131,8 +125,6 @@ class MainActivity : AppCompatActivity() {
                         Toast.LENGTH_LONG
                     ).show()
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
             }
         }
     }
