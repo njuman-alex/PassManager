@@ -130,8 +130,6 @@ class SettingsActivity : AppCompatActivity() {
 
                 val json = passwords.toJson()
 
-                //val prefs = getSharedPreferences("password_prefs", MODE_PRIVATE)
-                //val masterPassword = prefs.getString("master_password", "") ?: ""
                 val masterPassword = SecurePrefs.getMaster(this@SettingsActivity) ?: ""
 
                 if (masterPassword.isEmpty()) {

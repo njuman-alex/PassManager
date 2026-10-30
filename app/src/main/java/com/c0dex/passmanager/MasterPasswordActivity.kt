@@ -87,20 +87,6 @@ class MasterPasswordActivity : AppCompatActivity() {
                         "Функции сохранения и экспорта будут недоступны!\n" +
                         "Для просмотра сохранённых паролей вам всё равно придётся ввести прежний мастер-пароль!")
                 .setPositiveButton("Да") { _, _ ->
-//                    val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-//                    prefs.edit()
-//                        .remove(MASTER_PASSWORD_SET_KEY)
-//                        .remove(MASTER_PASSWORD_KEY)
-//                        .apply()
-//
-//                    Toast.makeText(this, "Мастер-пароль сброшен!", Toast.LENGTH_SHORT).show()
-//                    checkMasterPasswordStatus()
-//
-//                    passwordEditText.isEnabled = true
-//                    confirmPasswordEditText.isEnabled = true
-//                    setButton.isEnabled = true
-//                    setResult(RESULT_OK)
-//                    finish()
                     requestMasterPasswordForDeletion()
                 }
                 .setNegativeButton("Нет", null)
