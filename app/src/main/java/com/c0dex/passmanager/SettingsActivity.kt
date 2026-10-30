@@ -172,7 +172,7 @@ class SettingsActivity : AppCompatActivity() {
             .setTitle("Импортировать?")
             .setMessage("Все текущие пароли будут заменены!")
             .setPositiveButton("Импорт") { _, _ ->
-                val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
                     type = "application/json"
                     addCategory(Intent.CATEGORY_OPENABLE)
                 }
