@@ -60,8 +60,6 @@ class SavePasswordActivity : AppCompatActivity() {
                         }
 
                         // Получаем мастер-пароль из prefs
-                        //val prefs = getSharedPreferences("password_prefs", MODE_PRIVATE)
-                        //val masterPassword = prefs.getString("master_password", "") ?: ""
                         val masterPassword = SecurePrefs.getMaster(this@SavePasswordActivity) ?: ""
 
                         if (masterPassword.isEmpty()) {

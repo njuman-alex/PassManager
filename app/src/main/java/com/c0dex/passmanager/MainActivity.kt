@@ -138,7 +138,6 @@ class MainActivity : AppCompatActivity() {
         copyButton = findViewById(R.id.copyButton)
         saveButton = findViewById(R.id.saveButton)
         toolbar = findViewById(R.id.toolbar)
-        toolbar = findViewById(R.id.toolbar)
         drawerLayout = findViewById(R.id.drawerLayout)
         navigationView = findViewById(R.id.navigationView)
         masterPasswordStatusText = findViewById(R.id.masterPasswordStatusText)
