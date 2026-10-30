@@ -116,6 +116,7 @@ class MasterPasswordActivity : AppCompatActivity() {
             .setView(dialogView)
             .setPositiveButton("ОК") { _, _ ->
                 if (input.text.toString() == getMasterPassword()) {
+                    SecurePrefs.clearMaster(this)
                     val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
                     prefs.edit()
                         .remove(MASTER_PASSWORD_SET_KEY)
@@ -136,18 +137,17 @@ class MasterPasswordActivity : AppCompatActivity() {
             .setNegativeButton("Отмена", null)
             .show()
     }
+
     private fun setMasterPassword(password: String) {
+        SecurePrefs.setMaster(this, password)
         val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         prefs.edit()
             .putBoolean(MASTER_PASSWORD_SET_KEY, true)
-            .putString(MASTER_PASSWORD_KEY, password)
             .apply()
     }
 
     private fun getMasterPassword(): String {
-        val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-        val masterPassword = prefs.getString(MASTER_PASSWORD_KEY, "") ?: ""
-        return masterPassword
+        return SecurePrefs.getMaster(this) ?: ""
     }
 
     override fun onSupportNavigateUp(): Boolean {
