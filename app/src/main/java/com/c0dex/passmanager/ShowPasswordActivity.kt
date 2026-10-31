@@ -2,183 +2,369 @@ package com.c0dex.passmanager
 
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.Context
 import android.os.Bundle
-import android.widget.Button
-import android.widget.EditText
-import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.Toolbar
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.lifecycleScope
 import com.c0dex.passmanager.data.PasswordDatabase
+import com.c0dex.passmanager.ui.theme.PassManagerTheme
 import kotlinx.coroutines.launch
 
-class ShowPasswordActivity : AppCompatActivity() {
-    private lateinit var descriptionText: EditText // <-- теперь EditText!
-    private lateinit var passwordText: TextView
-    private lateinit var masterPasswordEditText: EditText
-    private lateinit var decryptButton: Button
-    private lateinit var copyButton: Button
-    private lateinit var editDescriptionButton: Button
-    private lateinit var deletePasswordButton: Button
-    private lateinit var toolbar: Toolbar
-
-    private var currentPasswordId: Long = -1
-    private var currentEncryptedPassword: String = ""
-    private var currentDescription: String = ""
-
+class ShowPasswordActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_show_password)
+        val passwordId = intent.getLongExtra("PASSWORD_ID", -1)
+        val encryptedPassword = intent.getStringExtra("ENCRYPTED_PASSWORD") ?: ""
 
-        currentPasswordId = intent.getLongExtra("PASSWORD_ID", -1)
-        currentEncryptedPassword = intent.getStringExtra("ENCRYPTED_PASSWORD") ?: ""
-
-        if (currentPasswordId == -1L || currentEncryptedPassword.isEmpty()) {
+        if (passwordId == -1L || encryptedPassword.isEmpty()) {
             Toast.makeText(this, "Ошибка: пароль не найден", Toast.LENGTH_SHORT).show()
             finish()
             return
         }
 
-        initViews()
-        setupToolbar()
-        setupClickListeners()
-        loadPassword()
+        setContent {
+            PassManagerTheme {
+                ShowPasswordScreen(
+                    passwordId = passwordId,
+                    encryptedPassword = encryptedPassword,
+                    onBack = {
+                        setResult(RESULT_OK)
+                        finish()
+                    },
+                    onDeleteSuccess = {
+                        setResult(RESULT_OK)
+                        finish()
+                    }
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ShowPasswordScreen(
+    passwordId: Long,
+    encryptedPassword: String,
+    onBack: () -> Unit,
+    onDeleteSuccess: () -> Unit
+) {
+    val context = LocalContext.current
+    var description by remember { mutableStateOf("") }
+    var displayedPassword by remember { mutableStateOf("Расшифруйте пароль") }
+    var masterPasswordInput by remember { mutableStateOf("") }
+
+    var isDecrypted by remember { mutableStateOf(false) }
+    var isEditingDescription by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
+    var showToast by remember { mutableStateOf<String?>(null) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    // Загрузка описания при старте
+    LaunchedEffect(passwordId) {
+        try {
+            val db = PasswordDatabase.getDatabase(context)
+            val item = db.passwordDao().getPasswordById(passwordId)
+            if (item != null) {
+                description = item.description
+            } else {
+                showToast = "Пароль не найден"
+                onBack()
+            }
+        } catch (e: Exception) {
+            showToast = "Ошибка загрузки"
+            onBack()
+        }
     }
 
-    private fun initViews() {
-        descriptionText = findViewById(R.id.descriptionText)
-        passwordText = findViewById(R.id.passwordText)
-        masterPasswordEditText = findViewById(R.id.masterPasswordEditText)
-        decryptButton = findViewById(R.id.decryptButton)
-        copyButton = findViewById(R.id.copyButton)
-        editDescriptionButton = findViewById(R.id.editDescriptionButton)
-        deletePasswordButton = findViewById(R.id.deletePasswordButton)
-        toolbar = findViewById(R.id.toolbar)
+    // Показ Toast
+    showToast?.let { msg ->
+        LaunchedEffect(msg) {
+            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+            showToast = null
+        }
     }
 
-    private fun setupToolbar() {
-        setSupportActionBar(toolbar)
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.setDisplayShowHomeEnabled(true)
-    }
-
-    private fun setupClickListeners() {
-        decryptButton.setOnClickListener {
-            val enteredMasterPassword = masterPasswordEditText.text.toString().trim()
-
-            if (enteredMasterPassword.isNotEmpty()) {
-                val decryptedPassword = EncryptionHelper.decrypt(currentEncryptedPassword, enteredMasterPassword)
-
-                if (decryptedPassword != null) {
-                    passwordText.text = decryptedPassword
-                    decryptButton.isEnabled = false
-                    masterPasswordEditText.setText("") // 🔒 очищаем сразу!
-                    editDescriptionButton.isEnabled = true
-                    copyButton.isEnabled = true
-                    deletePasswordButton.isEnabled = true
-
-                    // Разрешаем редактировать описание (но не активируем сразу)
-                    descriptionText.isEnabled = true
-                    descriptionText.isFocusable = true
-                    descriptionText.isFocusableInTouchMode = true
-
-                    Toast.makeText(this, "Пароль расшифрован!", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(this, "Неверный мастер-пароль", Toast.LENGTH_SHORT).show()
+    // Диалог подтверждения удаления
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Удалить пароль?") },
+            text = { Text("Это действие нельзя отменить.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteDialog = false
+                        isLoading = true
+                        val activity = context as? ComponentActivity
+                        activity?.lifecycleScope?.launch {
+                            try {
+                                val db = PasswordDatabase.getDatabase(context)
+                                db.passwordDao().deletePassword(passwordId)
+                                showToast = "Пароль удалён!"
+                                onDeleteSuccess()
+                            } catch (e: Exception) {
+                                showToast = "Ошибка удаления"
+                                isLoading = false
+                            }
+                        }
+                    },
+                    enabled = !isLoading
+                ) {
+                    Text(if (isLoading) "Удаление..." else "Удалить", color = MaterialTheme.colorScheme.error)
                 }
-            } else {
-                Toast.makeText(this, "Введите мастер-пароль", Toast.LENGTH_SHORT).show()
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }, enabled = !isLoading) {
+                    Text("Отмена")
+                }
             }
+        )
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Просмотр пароля") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            )
         }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp)
+        ) {
+            Card(
+                modifier = Modifier.fillMaxSize(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp)
+                ) {
+                    // Верхняя часть с полями
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        // 1. Описание
+                        Text(
+                            text = "Описание пароля:",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        TextField(
+                            value = description,
+                            onValueChange = { if (isEditingDescription) description = it },
+                            enabled = isEditingDescription,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 16.dp),
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                                disabledContainerColor = MaterialTheme.colorScheme.surface,
+                                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                                unfocusedIndicatorColor = MaterialTheme.colorScheme.outline,
+                                disabledIndicatorColor = MaterialTheme.colorScheme.outline
+                            )
+                        )
 
-        copyButton.setOnClickListener {
-            try {
-                val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
-                clipboard.setPrimaryClip(ClipData.newPlainText("password", passwordText.text))
-                Toast.makeText(this, "Пароль скопирован", Toast.LENGTH_SHORT).show()
-            } catch (e: Exception) {
-                Toast.makeText(this, "Ошибка копирования", Toast.LENGTH_SHORT).show()
-            }
-        }
+                        // 2. Пароль
+                        Text(
+                            text = "Пароль:",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        SelectionContainer {
+                            Text(
+                                text = displayedPassword,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp)
+                                    .padding(bottom = 16.dp),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
 
-        editDescriptionButton.setOnClickListener {
-            if (editDescriptionButton.text == "Изменить описание") {
-                // Переключаемся в режим редактирования
-                descriptionText.isEnabled = true
-                descriptionText.isFocusable = true
-                descriptionText.isFocusableInTouchMode = true
-                descriptionText.requestFocus()
-                editDescriptionButton.text = "Сохранить описание"
-            } else {
-                // Сохраняем
-                val newDesc = descriptionText.text.toString().trim()
-                if (newDesc.isNotEmpty()) {
-                    lifecycleScope.launch {
-                        try {
-                            val db = PasswordDatabase.getDatabase(this@ShowPasswordActivity)
-                            db.passwordDao().updateDescription(currentPasswordId, newDesc)
-                            currentDescription = newDesc
-                            Toast.makeText(this@ShowPasswordActivity, "Описание обновлено!", Toast.LENGTH_SHORT).show()
+                        // 3. Мастер-пароль
+                        Text(
+                            text = "Мастер-пароль:",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        OutlinedTextField(
+                            value = masterPasswordInput,
+                            onValueChange = { masterPasswordInput = it },
+                            label = { Text("Введите мастер-пароль для расшифровки") },
+                            visualTransformation = PasswordVisualTransformation(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 16.dp),
+                            enabled = !isDecrypted,
+                            singleLine = true
+                        )
 
-                            // Блокируем поле после сохранения
-                            descriptionText.isEnabled = false
-                            descriptionText.isFocusable = false
-                            editDescriptionButton.text = "Изменить описание"
-                        } catch (e: Exception) {
-                            Toast.makeText(this@ShowPasswordActivity, "Ошибка обновления", Toast.LENGTH_SHORT).show()
+                        // 4. Кнопки действий
+                        Button(
+                            onClick = {
+                                if (masterPasswordInput.isNotEmpty()) {
+                                    val decrypted = EncryptionHelper.decrypt(encryptedPassword, masterPasswordInput)
+                                    if (decrypted != null) {
+                                        displayedPassword = decrypted
+                                        isDecrypted = true
+                                        masterPasswordInput = "" // Очищаем сразу
+                                        showToast = "Пароль расшифрован!"
+                                    } else {
+                                        showToast = "Неверный мастер-пароль"
+                                    }
+                                } else {
+                                    showToast = "Введите мастер-пароль"
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                            enabled = !isDecrypted && !isLoading
+                        ) {
+                            Text("Расшифровать")
+                        }
+
+                        Button(
+                            onClick = {
+                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                clipboard.setPrimaryClip(ClipData.newPlainText("password", displayedPassword))
+                                showToast = "Пароль скопирован"
+                            },
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                            enabled = isDecrypted && !isLoading
+                        ) {
+                            Text("Скопировать в буфер")
+                        }
+
+                        Button(
+                            onClick = {
+                                if (!isEditingDescription) {
+                                    isEditingDescription = true
+                                } else {
+                                    if (description.isNotBlank()) {
+                                        isLoading = true
+                                        val activity = context as? ComponentActivity
+                                        activity?.lifecycleScope?.launch {
+                                            try {
+                                                val db = PasswordDatabase.getDatabase(context)
+                                                db.passwordDao().updateDescription(passwordId, description.trim())
+                                                isEditingDescription = false
+                                                showToast = "Описание обновлено!"
+                                            } catch (e: Exception) {
+                                                showToast = "Ошибка обновления"
+                                            } finally {
+                                                isLoading = false
+                                            }
+                                        }
+                                    } else {
+                                        showToast = "Описание не может быть пустым"
+                                    }
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                            enabled = isDecrypted && !isLoading
+                        ) {
+                            Text(if (isEditingDescription) "Сохранить описание" else "Изменить описание")
                         }
                     }
-                } else {
-                    Toast.makeText(this, "Описание не может быть пустым", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
 
-        deletePasswordButton.setOnClickListener {
-            deletePasswordButton.isEnabled = false // блокируем повтор
-            lifecycleScope.launch {
-                try {
-                    val db = PasswordDatabase.getDatabase(this@ShowPasswordActivity)
-                    db.passwordDao().deletePassword(currentPasswordId)
-                    Toast.makeText(this@ShowPasswordActivity, "Пароль удалён!", Toast.LENGTH_SHORT).show()
-                    setResult(RESULT_OK)
-                    finish()
-                } catch (e: Exception) {
-                    Toast.makeText(this@ShowPasswordActivity, "Ошибка удаления", Toast.LENGTH_SHORT).show()
-                    deletePasswordButton.isEnabled = true // разблокируем при ошибке
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // 5. Кнопка удаления (снизу, красная)
+                    OutlinedButton(
+                        onClick = { showDeleteDialog = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = isDecrypted && !isLoading,
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error,
+                            disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                        ),
+                        border = BorderStroke(
+                            1.dp,
+                            MaterialTheme.colorScheme.error.copy(alpha = if (isDecrypted) 1f else 0.38f)
+                        )
+                    ) {
+                        Text(if (isLoading) "Удаление..." else "Удалить пароль")
+                    }
                 }
             }
         }
     }
+}
 
-    private fun loadPassword() {
-        lifecycleScope.launch {
-            try {
-                val db = PasswordDatabase.getDatabase(this@ShowPasswordActivity)
-                val item = db.passwordDao().getPasswordById(currentPasswordId)
-                if (item != null) {
-                    currentDescription = item.description
-                    descriptionText.setText(currentDescription)
-                    passwordText.text = "Расшифруйте пароль"
-
-                    // Блокируем описание до расшифровки
-                    descriptionText.isEnabled = false
-                    descriptionText.isFocusable = false
-                } else {
-                    Toast.makeText(this@ShowPasswordActivity, "Пароль не найден", Toast.LENGTH_SHORT).show()
-                    finish()
-                }
-            } catch (e: Exception) {
-                Toast.makeText(this@ShowPasswordActivity, "Ошибка загрузки", Toast.LENGTH_SHORT).show()
-                finish()
-            }
-        }
-    }
-
-    override fun onSupportNavigateUp(): Boolean {
-        setResult(RESULT_OK)
-        finish()
-        return true
+@Preview(showBackground = true)
+@Composable
+fun ShowPasswordScreenPreview() {
+    PassManagerTheme {
+        ShowPasswordScreen(
+            passwordId = 1L,
+            encryptedPassword = "encrypted_data_here",
+            onBack = {},
+            onDeleteSuccess = {}
+        )
     }
 }

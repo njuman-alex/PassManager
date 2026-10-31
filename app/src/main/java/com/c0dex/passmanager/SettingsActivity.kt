@@ -1,262 +1,388 @@
 package com.c0dex.passmanager
 
-import android.content.ContentValues
-import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.os.Environment
-import android.provider.MediaStore
-import android.widget.Button
-import android.widget.CheckBox
-import android.widget.EditText
 import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.Toolbar
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import com.c0dex.passmanager.data.PasswordDatabase
 import com.c0dex.passmanager.data.PasswordItem
+import com.c0dex.passmanager.ui.theme.PassManagerTheme
 import com.google.gson.Gson
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-class SettingsActivity : AppCompatActivity() {
-    private lateinit var exportButton: Button
-    private lateinit var importButton: Button
-    private lateinit var deleteAllButton: Button
-    private lateinit var toolbar: Toolbar
+class SettingsActivity : ComponentActivity() {
+
+    // Uri выбранного файла импорта — наблюдает Compose
+    var pendingImportUri by mutableStateOf<Uri?>(null)
+
+    private val exportLauncher = registerForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json")
+    ) { uri -> if (uri != null) performExportToUri(uri) }
+
+    private val importLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri -> if (uri != null) pendingImportUri = uri }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_settings)
-
-        initViews()
-        setupToolbar()
-        setupClickListeners()
-    }
-
-    private fun initViews() {
-        exportButton = findViewById(R.id.exportButton)
-        importButton = findViewById(R.id.importButton)
-        deleteAllButton = findViewById(R.id.deleteAllButton)
-        toolbar = findViewById(R.id.toolbar)
-    }
-
-    private fun setupToolbar() {
-        setSupportActionBar(toolbar)
-
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.setDisplayShowHomeEnabled(true)
-    }
-
-    private fun setupClickListeners() {
-        exportButton.setOnClickListener {
-            //Toast.makeText(this, "Экспорт базы паролей", Toast.LENGTH_SHORT).show()
-            exportPasswords()
-        }
-
-        importButton.setOnClickListener {
-            //Toast.makeText(this, "Импорт базы паролей", Toast.LENGTH_SHORT).show()
-            importPasswords()
-        }
-
-        deleteAllButton.setOnClickListener {
-            showDeleteAllAlert()
-        }
-    }
-
-    private fun showDeleteAllAlert() {
-        val dialogView = layoutInflater.inflate(R.layout.dialog_delete_all, null)
-        val checkBox = dialogView.findViewById<CheckBox>(R.id.confirmCheckBox)
-        lifecycleScope.launch {
-            try{
-                val db = PasswordDatabase.getDatabase(this@SettingsActivity)
-                val passwords = db.passwordDao().getAllPasswords()
-
-                if (passwords.isEmpty()) {
-                    Toast.makeText(this@SettingsActivity, "Нечего удалять", Toast.LENGTH_SHORT).show()
-                    return@launch
-                }
-                else {
-                    com.google.android.material.dialog.MaterialAlertDialogBuilder(this@SettingsActivity)
-                        .setTitle("Удалить все пароли")
-                        .setMessage("Вы действительно хотите удалить все сохранённые пароли? Это действие нельзя отменить.")
-                        .setView(dialogView)
-                        .setPositiveButton("Удалить") { _, _ ->
-                            if (checkBox.isChecked) {
-                                deleteAllPasswords()
-                            } else {
-                                Toast.makeText(this@SettingsActivity, "Подтвердите удаление", Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                        .setNegativeButton("Отмена", null)
-                        .show()
-                }
-            } catch (e: Exception) {
-                Toast.makeText(this@SettingsActivity, "Ошибка удаления", Toast.LENGTH_SHORT).show()
-                e.printStackTrace()
-            }
-        }
-
-
-    }
-
-    private fun deleteAllPasswords() {
-        lifecycleScope.launch {
-            try {
-                val db = PasswordDatabase.getDatabase(this@SettingsActivity)
-                db.passwordDao().deleteAllPasswords()
-                Toast.makeText(this@SettingsActivity, "Все пароли удалены", Toast.LENGTH_SHORT).show()
-            } catch (e: Exception) {
-                Toast.makeText(this@SettingsActivity, "Ошибка удаления", Toast.LENGTH_SHORT).show()
-                e.printStackTrace()
+        setContent {
+            PassManagerTheme {
+                SettingsScreen(
+                    onBack = { finish() },
+                    onExportClick = { startExport() },
+                    onImportClick = { importLauncher.launch(arrayOf("application/json", "*/*")) }
+                )
             }
         }
     }
 
-    private fun exportPasswords() {
+    private fun toast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+
+    private fun startExport() {
+        lifecycleScope.launch {
+            val db = PasswordDatabase.getDatabase(this@SettingsActivity)
+            val passwords = db.passwordDao().getAllPasswords()
+            if (passwords.isEmpty()) {
+                toast("Нет паролей для экспорта")
+                return@launch
+            }
+            val master = SecurePrefs.getMaster(this@SettingsActivity) ?: ""
+            if (master.isEmpty()) {
+                toast("Мастер-пароль не установлен")
+                return@launch
+            }
+            val sdf = SimpleDateFormat("dd.MM.yyyy_HH:mm", Locale.getDefault())
+            exportLauncher.launch("PassManager_passwords_${sdf.format(Date())}.json")
+        }
+    }
+
+    fun performExportToUri(uri: Uri) {
         lifecycleScope.launch {
             try {
                 val db = PasswordDatabase.getDatabase(this@SettingsActivity)
                 val passwords = db.passwordDao().getAllPasswords()
-
-                if (passwords.isEmpty()) {
-                    Toast.makeText(this@SettingsActivity, "Нет паролей для экспорта", Toast.LENGTH_SHORT).show()
-                    return@launch
-                }
-
-                val json = passwords.toJson()
-
-                val masterPassword = SecurePrefs.getMaster(this@SettingsActivity) ?: ""
-
-                if (masterPassword.isEmpty()) {
-                    Toast.makeText(this@SettingsActivity, "Мастер-пароль не установлен", Toast.LENGTH_SHORT).show()
-                    return@launch
-                }
-
-                val encryptedJson = EncryptionHelper.encrypt(json, masterPassword)
-
-                val sdf = SimpleDateFormat("dd.MM.yyyy_HH:mm", Locale.getDefault())
-                val fileName = "PassManager_passwords_${sdf.format(Date())}.json"
-
-                // Сохраняем в Downloads
-                val contentValues = ContentValues().apply {
-                    put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
-                    put(MediaStore.MediaColumns.MIME_TYPE, "application/json")
-                    put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
-                }
-
-                val resolver = contentResolver
-                val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
-
-                if (uri != null) {
-                    resolver.openOutputStream(uri).use { outputStream ->
-                        outputStream?.write(encryptedJson.toByteArray())
-                    }
-                    Toast.makeText(this@SettingsActivity, "Пароли экспортированы в папку \"Загрузки\" как \"$fileName\"", Toast.LENGTH_LONG).show()
-                } else {
-                    Toast.makeText(this@SettingsActivity, "Ошибка экспорта", Toast.LENGTH_SHORT).show()
-                }
+                val master = SecurePrefs.getMaster(this@SettingsActivity) ?: return@launch
+                val json = Gson().toJson(passwords)
+                val encrypted = EncryptionHelper.encrypt(json, master)
+                contentResolver.openOutputStream(uri)?.use { it.write(encrypted.toByteArray()) }
+                toast("Пароли экспортированы")
             } catch (e: Exception) {
-                Toast.makeText(this@SettingsActivity, "Ошибка экспорта", Toast.LENGTH_SHORT).show()
-                e.printStackTrace()
+                toast("Ошибка экспорта: ${e.message}")
             }
         }
     }
 
-    private fun importPasswords() {
-        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
-            .setTitle("Импортировать?")
-            .setMessage("Все текущие пароли будут заменены!")
-            .setPositiveButton("Импорт") { _, _ ->
-                val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-                    type = "application/json"
-                    addCategory(Intent.CATEGORY_OPENABLE)
-                }
-                importFileLauncher.launch(intent)
-            }
-            .setNegativeButton("Отмена", null)
-            .show()
-    }
-
-    private val importFileLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == RESULT_OK) {
-            val uri = result.data?.data
-            if (uri != null) {
-                // Сначала запросим мастер-пароль
-                requestMasterPasswordForImport(uri)
-            }
-        }
-    }
-
-    private fun requestMasterPasswordForImport(uri: Uri) {
-        val dialogView = layoutInflater.inflate(R.layout.dialog_master_password, null)
-        val input = dialogView.findViewById<EditText>(R.id.masterPasswordEditText)
-
-        AlertDialog.Builder(this)
-            .setTitle("Введите мастер-пароль")
-            .setView(dialogView)
-            .setPositiveButton("ОК") { _, _ ->
-                val masterPassword = input.text.toString()
-                importPasswordsFromFile(uri, masterPassword)
-            }
-            .setNegativeButton("Отмена", null)
-            .show()
-    }
-
-    private fun importPasswordsFromFile(uri: Uri, masterPassword: String) {
+    fun performImport(uri: Uri, masterPassword: String) {
         lifecycleScope.launch {
             try {
-                val inputStream = contentResolver.openInputStream(uri)
-                val encryptedJson = inputStream?.bufferedReader().use { it?.readText() }
-
+                val encryptedJson = contentResolver.openInputStream(uri)
+                    ?.bufferedReader()?.use { it.readText() }
                 if (encryptedJson.isNullOrEmpty()) {
-                    Toast.makeText(this@SettingsActivity, "Файл пуст", Toast.LENGTH_SHORT).show()
+                    toast("Файл пуст")
                     return@launch
                 }
-
                 val json = EncryptionHelper.decrypt(encryptedJson, masterPassword)
                 if (json == null) {
-                    Toast.makeText(this@SettingsActivity, "Неверный мастер-пароль", Toast.LENGTH_SHORT).show()
+                    toast("Неверный мастер-пароль")
                     return@launch
                 }
-
-                val passwords = json.fromJson()
-
+                val items = Gson().fromJson(json, Array<PasswordItem>::class.java).toList()
                 val db = PasswordDatabase.getDatabase(this@SettingsActivity)
-                db.passwordDao().deleteAllPasswords() // <-- Удаляем старые
-                db.passwordDao().insertPasswords(passwords) // <-- Вставляем новые
-
-                Toast.makeText(this@SettingsActivity, "Пароли импортированы", Toast.LENGTH_SHORT).show()
+                db.passwordDao().deleteAllPasswords()
+                db.passwordDao().insertPasswords(items)
+                toast("Пароли импортированы")
             } catch (e: Exception) {
-                Toast.makeText(this@SettingsActivity, "Ошибка импорта", Toast.LENGTH_SHORT).show()
-                e.printStackTrace()
+                toast("Ошибка импорта: ${e.message}")
             }
         }
     }
+}
 
-    private fun String.fromJson(): List<PasswordItem> {
-        val gson = Gson()
-        return try {
-            gson.fromJson(this, Array<PasswordItem>::class.java).toList()
-        } catch (e: Exception) {
-            emptyList()
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SettingsScreen(
+    onBack: () -> Unit,
+    onExportClick: () -> Unit,
+    onImportClick: () -> Unit
+) {
+    val context = LocalContext.current
+    val activity = context as? SettingsActivity
+    val scope = rememberCoroutineScope()
+
+    var toastMsg by remember { mutableStateOf<String?>(null) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var checkboxChecked by remember { mutableStateOf(false) }
+    var showImportConfirm by remember { mutableStateOf(false) }
+    var showMasterInput by remember { mutableStateOf(false) }
+    var masterInput by remember { mutableStateOf("") }
+
+    // Реагируем на выбранный файл импорта
+    val pendingUri = activity?.pendingImportUri
+    LaunchedEffect(pendingUri) {
+        if (pendingUri != null) showImportConfirm = true
+    }
+
+    // Показ Toast
+    toastMsg?.let { msg ->
+        LaunchedEffect(msg) {
+            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+            toastMsg = null
         }
     }
 
-    private fun List<PasswordItem>.toJson(): String {
-        val gson = Gson()
-        return gson.toJson(this)
+    // ===== Диалог подтверждения импорта =====
+    if (showImportConfirm) {
+        AlertDialog(
+            onDismissRequest = {
+                showImportConfirm = false
+                activity?.pendingImportUri = null
+            },
+            title = { Text("Импортировать?") },
+            text = { Text("Все текущие пароли будут заменены!") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showImportConfirm = false
+                    showMasterInput = true
+                }) { Text("Импорт") }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showImportConfirm = false
+                    activity?.pendingImportUri = null
+                }) { Text("Отмена") }
+            }
+        )
     }
 
-    override fun onSupportNavigateUp(): Boolean {
-        //onBackPressed()
-        finish()
-        return true
+    // ===== Диалог ввода мастера для импорта =====
+    if (showMasterInput) {
+        AlertDialog(
+            onDismissRequest = {
+                showMasterInput = false
+                masterInput = ""
+                activity?.pendingImportUri = null
+            },
+            title = { Text("Введите мастер-пароль") },
+            text = {
+                OutlinedTextField(
+                    value = masterInput,
+                    onValueChange = { masterInput = it },
+                    label = { Text("Мастер-пароль") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val uri = activity?.pendingImportUri
+                    if (uri != null) activity.performImport(uri, masterInput)
+                    showMasterInput = false
+                    masterInput = ""
+                    activity?.pendingImportUri = null
+                }) { Text("ОК") }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showMasterInput = false
+                    masterInput = ""
+                    activity?.pendingImportUri = null
+                }) { Text("Отмена") }
+            }
+        )
+    }
+
+    // ===== Диалог удаления всех паролей с чекбоксом =====
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showDeleteDialog = false
+                checkboxChecked = false
+            },
+            title = { Text("Удалить все пароли") },
+            text = {
+                Column {
+                    Text("Вы действительно хотите удалить все сохранённые пароли? Это действие нельзя отменить.")
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(
+                            checked = checkboxChecked,
+                            onCheckedChange = { checkboxChecked = it }
+                        )
+                        Text("Я подтверждаю удаление всех паролей")
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        scope.launch {
+                            try {
+                                val db = PasswordDatabase.getDatabase(context)
+                                db.passwordDao().deleteAllPasswords()
+                                toastMsg = "Все пароли удалены"
+                            } catch (e: Exception) {
+                                toastMsg = "Ошибка удаления"
+                            } finally {
+                                showDeleteDialog = false
+                                checkboxChecked = false
+                            }
+                        }
+                    },
+                    enabled = checkboxChecked
+                ) {
+                    Text("Удалить", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showDeleteDialog = false
+                    checkboxChecked = false
+                }) { Text("Отмена") }
+            }
+        )
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Настройки") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            )
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp)
+        ) {
+            Card(
+                modifier = Modifier.fillMaxSize(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp)
+                ) {
+                    // Верхние кнопки (weight толкает "удалить" вниз, импорт НЕ нужен!)
+                    Column(modifier = Modifier.weight(1f)) {
+                        Button(
+                            onClick = onExportClick,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 16.dp)
+                        ) {
+                            Text("Экспорт базы паролей")
+                        }
+
+                        Button(
+                            onClick = onImportClick,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 16.dp)
+                        ) {
+                            Text("Импорт базы паролей")
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Красная кнопка удаления
+                    OutlinedButton(
+                        onClick = {
+                            scope.launch {
+                                val db = PasswordDatabase.getDatabase(context)
+                                val passwords = db.passwordDao().getAllPasswords()
+                                if (passwords.isEmpty()) {
+                                    toastMsg = "Нечего удалять"
+                                } else {
+                                    showDeleteDialog = true
+                                }
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
+                        ),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error)
+                    ) {
+                        Text("Удалить все пароли")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun SettingsScreenPreview() {
+    PassManagerTheme {
+        SettingsScreen(
+            onBack = {},
+            onExportClick = {},
+            onImportClick = {}
+        )
     }
 }
