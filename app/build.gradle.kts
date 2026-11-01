@@ -2,26 +2,19 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    //id("org.jetbrains.kotlin.kapt")
-    id("kotlin-kapt")
+    alias(libs.plugins.ksp)
 }
 
 android {
     namespace = "com.c0dex.passmanager"
-    buildFeatures {
-        buildConfig = true
-    }
-    compileSdk {
-        version = release(36)
-    }
-
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.c0dex.passmanager"
         minSdk = 26
-        targetSdk = 36
-        versionCode = 15
-        versionName = "15.1"
+        targetSdk = 35
+        versionCode = 16
+        versionName = "16"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -35,22 +28,24 @@ android {
             )
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
     kotlinOptions {
         jvmTarget = "11"
     }
+
     buildFeatures {
         compose = true
+        buildConfig = true
     }
+
     applicationVariants.all {
         outputs.all {
-            // Проверяем, что это OutputConfigurationImpl (или аналогичный тип)
-            // и меняем имя только у APK, если их несколько типов
             if (this is com.android.build.gradle.internal.api.ApkVariantOutputImpl) {
-                // Пример: MyApp_v1.0_release.apk
                 outputFileName = "PassManager_v${versionName}_${buildType.name}.apk"
             }
         }
@@ -66,7 +61,17 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.appcompat)
+    implementation(libs.androidx.palette.ktx)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
+    implementation(libs.material)
+    implementation(libs.gson)
+    implementation(libs.security.crypto)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -74,15 +79,4 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
-    implementation("androidx.navigation:navigation-compose:2.9.6")
-    implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx)
-    //implementation(libs.sqlcipher)
-    //implementation(libs.androidx.sqlite.ktx)
-    implementation("com.google.android.material:material:1.13.0")
-    implementation("androidx.room:room-runtime:2.6.1")
-    implementation("androidx.room:room-ktx:2.6.1")
-    kapt("androidx.room:room-compiler:2.6.1")
-    implementation("com.google.code.gson:gson:2.13.2")
-    implementation("androidx.security:security-crypto:1.1.0-alpha06")
 }

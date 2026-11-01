@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -98,8 +99,11 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Читаем сохраненную тему (0 = система по умолчанию)
+        val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
+        val themeMode = prefs.getInt("theme_mode", 0)
         setContent {
-            PassManagerTheme {
+            PassManagerTheme(themeMode = themeMode) {
                 MainScreen(
                     activity = this,
                     generatedPassword = generatedPassword,
@@ -242,12 +246,24 @@ fun MainScreen(
                 )
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Filled.Settings, contentDescription = null) },
-                    label = { Text("Настройки") },
+                    label = { Text("Управление базой паролей") },
                     selected = false,
                     onClick = {
                         scope.launch {
                             drawerState.close()
                             context.startActivity(Intent(context, SettingsActivity::class.java))
+                        }
+                    }
+                )
+                NavigationDrawerItem(
+                    icon = { Icon(Icons.Filled.Palette, contentDescription = null) },
+                    label = { Text("Тема") },
+                    selected = false,
+                    onClick = {
+                        scope.launch {
+                            drawerState.close()
+                            //activity.launchThemeActivity()
+                            context.startActivity(Intent(context, ThemeActivity::class.java))
                         }
                     }
                 )
