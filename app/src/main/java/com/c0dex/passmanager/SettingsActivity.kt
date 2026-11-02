@@ -132,11 +132,30 @@ class SettingsActivity : ComponentActivity() {
                     toast("Неверный мастер-пароль")
                     return@launch
                 }
-                val items = Gson().fromJson(json, Array<PasswordItem>::class.java).toList()
+                val imported = Gson().fromJson(json, Array<PasswordItem>::class.java).toList()
                 val db = PasswordDatabase.getDatabase(this@SettingsActivity)
-                db.passwordDao().deleteAllPasswords()
-                db.passwordDao().insertPasswords(items)
-                toast("Пароли импортированы")
+
+                // Ключи уже имеющихся записей: "описание + шифротекст"
+                val current = db.passwordDao().getAllPasswords()
+                val existingKeys = current
+                    .map { it.description to it.encryptedPassword }
+                    .toSet()
+
+                // Полный дубль — мимо, всё остальное — в базу.
+                // id сбрасываем в 0, чтобы Room сам выдал новые (иначе конфликт primary key)
+                val unique = imported
+                    .filter { (it.description to it.encryptedPassword) !in existingKeys }
+                    .map { it.copy(id = 0) }
+                val skipped = imported.size - unique.size
+
+                db.passwordDao().insertPasswords(unique)
+
+                toast(
+                    if (skipped > 0)
+                        "Импортировано: ${unique.size}, пропущено дубликатов: $skipped"
+                    else
+                        "Импортировано паролей: ${unique.size}"
+                )
             } catch (e: Exception) {
                 toast("Ошибка импорта: ${e.message}")
             }
@@ -184,7 +203,7 @@ fun SettingsScreen(
                 activity?.pendingImportUri = null
             },
             title = { Text("Импортировать?") },
-            text = { Text("Все текущие пароли будут заменены!") },
+            text = { Text("Пароли из файла будут добавлены к существующим. Полные дубликаты будут пропущены.") },
             confirmButton = {
                 TextButton(onClick = {
                     showImportConfirm = false
