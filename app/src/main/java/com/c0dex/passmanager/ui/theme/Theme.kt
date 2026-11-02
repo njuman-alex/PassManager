@@ -14,6 +14,8 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.runtime.SideEffect
 import androidx.core.view.WindowCompat
 import androidx.compose.ui.graphics.toArgb
+import android.content.Context
+import androidx.compose.runtime.remember
 
 
 
@@ -30,8 +32,17 @@ private val LightColorScheme = lightColorScheme(
 )
 
 @Composable
+fun savedThemeMode(): Int {
+    val context = LocalContext.current
+    return remember(context) {
+        context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+            .getInt("theme_mode", 0)
+    }
+}
+
+@Composable
 fun PassManagerTheme(
-    themeMode: Int = 0, // 0 = Система, 1 = Светлая, 2 = Темная
+    themeMode: Int = savedThemeMode(),
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {

@@ -99,11 +99,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Читаем сохраненную тему (0 = система по умолчанию)
-        val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
-        val themeMode = prefs.getInt("theme_mode", 0)
         setContent {
-            PassManagerTheme(themeMode = themeMode) {
+            PassManagerTheme {
                 MainScreen(
                     activity = this,
                     generatedPassword = generatedPassword,
