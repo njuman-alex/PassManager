@@ -94,15 +94,15 @@ fun ShowPasswordScreen(
     onDeleteSuccess: () -> Unit
 ) {
     val context = LocalContext.current
-    var description by remember { mutableStateOf("") }
-    var displayedPassword by remember { mutableStateOf("Расшифруйте пароль") }
-    var masterPasswordInput by remember { mutableStateOf("") }
+    var description by remember(passwordId) { mutableStateOf("") }
+    var displayedPassword by remember(passwordId) { mutableStateOf("Расшифруйте пароль") }
+    var masterPasswordInput by remember(passwordId) { mutableStateOf("") }
 
-    var isDecrypted by remember { mutableStateOf(false) }
-    var isEditingDescription by remember { mutableStateOf(false) }
-    var isLoading by remember { mutableStateOf(false) }
-    var showToast by remember { mutableStateOf<String?>(null) }
-    var showDeleteDialog by remember { mutableStateOf(false) }
+    var isDecrypted by remember(passwordId) { mutableStateOf(false) }
+    var isEditingDescription by remember(passwordId) { mutableStateOf(false) }
+    var isLoading by remember(passwordId) { mutableStateOf(false) }
+    var showToast by remember(passwordId) { mutableStateOf<String?>(null) }
+    var showDeleteDialog by remember(passwordId) { mutableStateOf(false) }
 
     // Загрузка описания при старте
     LaunchedEffect(passwordId) {

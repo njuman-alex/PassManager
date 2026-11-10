@@ -36,7 +36,9 @@ object EncryptionHelper {
     private fun deriveKey(password: String, salt: ByteArray): SecretKeySpec {
         val spec = PBEKeySpec(password.toCharArray(), salt, PBKDF2_ITERATIONS, KEY_SIZE_BITS)
         val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
-        return SecretKeySpec(factory.generateSecret(spec).encoded, "AES")
+        val secret = factory.generateSecret(spec)
+        spec.clearPassword()  // ← ДОБАВИТЬ
+        return SecretKeySpec(secret.encoded, "AES")
     }
 
     fun encrypt(data: String, password: String): String {
