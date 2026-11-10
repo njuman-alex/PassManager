@@ -138,7 +138,7 @@ fun MainScreen(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
 
     // Состояние с сохранением при повороте
-    var useLetters by rememberSaveable { mutableStateOf(false) }
+    var useLetters by rememberSaveable { mutableStateOf(true) }
     var useDigits by rememberSaveable { mutableStateOf(false) }
     var useSpecial by rememberSaveable { mutableStateOf(false) }
     var passwordLength by rememberSaveable { mutableStateOf("8") }
