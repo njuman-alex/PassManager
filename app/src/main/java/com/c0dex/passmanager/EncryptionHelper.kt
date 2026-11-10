@@ -100,6 +100,7 @@ object EncryptionHelper {
         } else {
             System.arraycopy(keyBytes, 0, key, 0, keyBytes.size)
         }
+        keyBytes.fill(0)   // ← ДОБАВИТЬ: затираем копию пароля
         return SecretKeySpec(key, "AES")
     }
 
